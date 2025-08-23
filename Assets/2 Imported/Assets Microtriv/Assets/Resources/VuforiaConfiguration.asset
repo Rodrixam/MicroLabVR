@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -2067402452, guid: bab6fa851cf5a1a4bba3cec5f191cb8e, type: 3}
+  m_Name: VuforiaConfiguration
+  m_EditorClassIdentifier: 
+  vuforia:
+    vuforiaLicenseKey: AQCTz1L/////AAABmceCoxg6nUY4ix6vtpRE2o9Cdn/Op28xDElvhneSPhWl47wwcWdd0+bL0s+gsi4dkkK+jM3mzM4XPanJ1FQRYxMhSN8RgAHwS1Y0Bt985zPmlQtAS2xJ7JiBAcQBPNhI7b/+jscNIKQa6RoZtvCbpYqpokGSX7J7ge3SfXVI3sDpiLp4GqAIzYtstJWSfdB+Y1Pw64ELMFWi5DgZmBysqvL1rRK3MptQi4qefzgfm5qXg+OSgcFTU6FYHj319Q04Qz712LlwFgEDqlL3B5IYkJ2ISyyRHtPhgY6ILbD1P+CX7YVdSsRln+Nv78f49TS6K2VYXjuEIhSBqjhAUS/2xthszCYVosy3Lg8TqtdoCFTg
+    ufoLicenseKey: QVdKdXZIai8vLy8vQUFBQUtGM3ptaWhORlU1VmcvQXRFYUJOWjJkZTlteWtvaG5ITTVHVlhzMWFaVVBveEh2akRaODBYOThNcW1jcjliVmZkWmlhU2ZEcFQrb2ZKdWVjZzgxaG4yZFRSaXJVdm11Qnk4M3RXUXgwb1dXdjRlenpuS0Q2Z1ZGRENvcFdwTlhtUkJPREU1ckN3T09DWW9yRkhVLzkvbm14dVZiMXRLSENhbEFQQnF5RGJtVFhmS0R0Z0I1MzlsL3ZVRGEvZmhpN1BCTGt6N1VOWmIremJ6TEVvUVRZYUlUYkphQjdicGZqZ3B4aUhaYXZOVG4vWC96L1UxQ2F6K3R2T0hLdzFXVFIzQ1lZOVpyQUxuVlJBZkRFU0JlOGJtYWx0cFE2WG1ocno4VGtBa0lVNnJxcmU4MVN1UCs5NGE4Qm5XK0xnTFdBMnR0bG1UT2xWQUYvVkVJcTRQRE5aYmFILzZkViszWGw0R3pteUo4NVdBaUg=
+    delayedInitialization: 0
+    cameraDeviceModeSetting: -1
+    maxSimultaneousImageTargets: 1
+    maxSimultaneousObjectTargets: 1
+    useDelayedLoadingObjectTargets: 0
+    modelTargetRecoWhileExtendedTracked: 1
+    version: 8.5.9
+    eulaAcceptedVersions: '{"Values":["8.1","0.0","9.8","8.5"]}'
+  database:
+    disableModelExtraction: 0
+  videoBackground:
+    numDivisions: 2
+    videoBackgroundShader: {fileID: 4800000, guid: f40623b353e2f1943b1b3ba42975db7a,
+      type: 3}
+    videoBackgroundEnabled: 1
+  deviceTracker:
+    autoInitTracker: 0
+    autoStartTracker: 0
+    arcoreRequirement: 1
+    autoImportArcore: 1
+  smartTerrain:
+    autoInitTracker: 0
+    autoStartTracker: 0
+  webcam:
+    deviceNameSetInEditor: "C\xE1mara de iPhone (5)"
+    turnOffWebCam: 0
+    renderTextureLayer: 30
