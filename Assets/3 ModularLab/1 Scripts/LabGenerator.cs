@@ -1,6 +1,9 @@
 using System;
+using System.Net.Mime;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace ModularLab.Scripts
 {
@@ -8,40 +11,65 @@ namespace ModularLab.Scripts
     {
         [SerializeField] private string labSceneName;
         [SerializeField] private int moduleNum;
+        [SerializeField] private Text uiText;
 
         private AsyncOperation _sceneLoadOp = null;
-        private Scene? _lobbyScene = null;
+        private Scene? _labScene = null;
 
-        private void Update()
+        
+        private void Start()
         {
-            // The lab scene must be loaded
-            if (_sceneLoadOp is not { isDone: true }) return;
-            
-            // Exception case
-            if (_lobbyScene == null)
-            {
-                Debug.LogError("No lobby scene.");
-                return;
-            }
-            
-            // Unload current scene
-            SceneManager.UnloadSceneAsync((Scene)_lobbyScene);
+            NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            _labScene = SceneManager.GetSceneAt(1);
+
+            Debug.Log($"Client {clientId} finished loading {sceneName}");
+            Debug.Log(_labScene.Value.name);
         }
 
         public void LoadLabScene()
         {
-            _lobbyScene = SceneManager.GetActiveScene();
-            _sceneLoadOp = SceneManager.LoadSceneAsync(labSceneName, LoadSceneMode.Additive);
+            if (NetworkManager.Singleton.IsServer) // Only server/host does this
+            {
+                NetworkManager.Singleton.SceneManager.LoadScene(
+                    labSceneName, 
+                    LoadSceneMode.Additive
+                );
+            }
+        }
+        
+        public void UnloadLabScene()
+        {
+            if (_labScene == null)
+            {
+                Debug.LogWarning("No LabScene Loaded");
+                return;
+            }
+            
+            if (NetworkManager.Singleton.IsServer) // Only server/host does this
+            {
+                NetworkManager.Singleton.SceneManager.UnloadScene(_labScene.Value);
+            }
         }
 
         public void AddModule()
         {
             moduleNum++;
+            UpdateText();
         }
 
         public void RemoveModule()
         {
             moduleNum--;
+            UpdateText();
+        }
+
+        public void UpdateText()
+        {
+            uiText.text = moduleNum.ToString();
         }
 
         public int GetModuleNum()

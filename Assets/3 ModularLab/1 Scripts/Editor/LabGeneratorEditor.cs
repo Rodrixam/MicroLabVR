@@ -11,10 +11,14 @@ namespace ModularLab.Scripts.Editor
             LabGenerator generator = (LabGenerator)target;
 
             DrawDefaultInspector();
+            GUILayout.Space(10);
+            
             if (GUILayout.Button("Generate Lab"))
             {
                 generator.LoadLabScene();
             }
+            
+            //generator.UpdateText();
         }
     }
 }
