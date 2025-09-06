@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace ModularLab.Scripts
 {
-    public class LabGenerator : MonoBehaviour
+    public class LabGenerator : NetworkBehaviour
     {
         [SerializeField] private string labSceneName;
         [SerializeField] private int moduleNum;
@@ -17,14 +17,14 @@ namespace ModularLab.Scripts
         private Scene? _labScene = null;
 
         
-        private void Start()
+        private void OnNetworkSpawn()
         {
             NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoaded;
         }
 
         private void OnSceneLoaded(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
         {
-            _labScene = SceneManager.GetSceneAt(1);
+            _labScene = SceneManager.GetSceneByName(sceneName);
 
             Debug.Log($"Client {clientId} finished loading {sceneName}");
             Debug.Log(_labScene.Value.name);

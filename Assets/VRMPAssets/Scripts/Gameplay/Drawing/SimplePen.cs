@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.XR;
 using XRMultiplayer;
 
-public class SimplePen : MonoBehaviour
+public class SimplePen : NetworkBehaviour
 {
     [SerializeField] PenTrail m_TrailRendererPrefab;
     [SerializeField] Transform m_PenTipTransform;
@@ -15,7 +17,12 @@ public class SimplePen : MonoBehaviour
     Color m_CurrentColor;
 
     List<PenTrail> m_PenTrails = new();
+    
+    
+    private InputDevice rightHand;
 
+    [SerializeField] private GameObject randomBs;
+    
     void Awake()
     {
         TryGetComponent(out m_NetworkInteractable);
@@ -25,6 +32,11 @@ public class SimplePen : MonoBehaviour
     {
         SetColor();
         XRINetworkGameManager.Connected.Subscribe(ConnectedToNetworkGame);
+        
+        if (IsOwner) // only setup input for local player
+        {
+            rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        }
     }
 
     void OnDestroy()
@@ -56,6 +68,8 @@ public class SimplePen : MonoBehaviour
             m_CurrentTrailRenderer.CreateInteractableTrail();
             m_CurrentTrailRenderer = null;
         }
+
+        Instantiate(randomBs, Vector3.up, Quaternion.identity);
     }
 
     public void SetColor()
@@ -70,6 +84,36 @@ public class SimplePen : MonoBehaviour
             m_CurrentColor = XRINetworkGameManager.LocalPlayerColor.Value;
         }
         m_PenTipRenderer.material.color = m_CurrentColor;
+    }
+    
+    void Update()
+    {
+        Debug.Log("Is owner? " + IsOwner);
+        if (!IsOwner) return; // prevent remote players from reading inputs
+    
+        if (rightHand.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed) && pressed)
+        {
+            Debug.Log("Local Player pressed A button!");
+    
+            // Send to server so other clients can react
+            SendButtonPressServerRpc();
+        }
+    }
+    
+    [ServerRpc]
+    private void SendButtonPressServerRpc(ServerRpcParams rpcParams = default)
+    {
+        Debug.Log("Server received button press");
+        ToggleDrawing(true);
+        // notify all clients
+        BroadcastButtonPressClientRpc();
+    }
+    
+    [ClientRpc]
+    private void BroadcastButtonPressClientRpc(ClientRpcParams rpcParams = default)
+    {
+        Debug.Log("All clients know a player pressed A");
+        // trigger animation, action, etc.
     }
 
 }
