@@ -18,11 +18,6 @@ public class SimplePen : NetworkBehaviour
 
     List<PenTrail> m_PenTrails = new();
     
-    
-    private InputDevice rightHand;
-
-    [SerializeField] private GameObject randomBs;
-    
     void Awake()
     {
         TryGetComponent(out m_NetworkInteractable);
@@ -32,11 +27,6 @@ public class SimplePen : NetworkBehaviour
     {
         SetColor();
         XRINetworkGameManager.Connected.Subscribe(ConnectedToNetworkGame);
-        
-        if (IsOwner) // only setup input for local player
-        {
-            rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-        }
     }
 
     void OnDestroy()
@@ -68,8 +58,6 @@ public class SimplePen : NetworkBehaviour
             m_CurrentTrailRenderer.CreateInteractableTrail();
             m_CurrentTrailRenderer = null;
         }
-
-        Instantiate(randomBs, Vector3.up, Quaternion.identity);
     }
 
     public void SetColor()
@@ -85,35 +73,4 @@ public class SimplePen : NetworkBehaviour
         }
         m_PenTipRenderer.material.color = m_CurrentColor;
     }
-    
-    void Update()
-    {
-        Debug.Log("Is owner? " + IsOwner);
-        if (!IsOwner) return; // prevent remote players from reading inputs
-    
-        if (rightHand.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed) && pressed)
-        {
-            Debug.Log("Local Player pressed A button!");
-    
-            // Send to server so other clients can react
-            SendButtonPressServerRpc();
-        }
-    }
-    
-    [ServerRpc]
-    private void SendButtonPressServerRpc(ServerRpcParams rpcParams = default)
-    {
-        Debug.Log("Server received button press");
-        ToggleDrawing(true);
-        // notify all clients
-        BroadcastButtonPressClientRpc();
-    }
-    
-    [ClientRpc]
-    private void BroadcastButtonPressClientRpc(ClientRpcParams rpcParams = default)
-    {
-        Debug.Log("All clients know a player pressed A");
-        // trigger animation, action, etc.
-    }
-
 }

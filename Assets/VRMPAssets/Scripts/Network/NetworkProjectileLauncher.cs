@@ -64,39 +64,52 @@ public class NetworkProjectileLauncher : NetworkBehaviour
     /// </summary>
     /// <param name="activate"></param>
     public void FireLauncher(bool activate)
+    {   
+        if (activate && NetworkManager.Singleton.IsListening)
+        {   
+            InstantiateProyectile();
+        }
+    }
+
+    public void FireLauncherOffline()
     {
-        if (activate)
+        if (!NetworkManager.Singleton.IsListening)
         {
-            Color fireColor = m_BackupColor;
-            if (m_ProjectileColor.Value != default)
-            {
-                fireColor = m_ProjectileColor.Value;
-            }
+            InstantiateProyectile();
+        }
+    }
 
-            GameObject newObject = m_ProjectilePooler.GetItem();
-            if (!newObject.TryGetComponent(out Projectile projectile))
-            {
-                Utils.Log("Projectile component not found on projectile object.", 1);
-                return;
-            }
+    void InstantiateProyectile()
+    {
+        Color fireColor = m_BackupColor;
+        if (m_ProjectileColor.Value != default)
+        {
+            fireColor = m_ProjectileColor.Value;
+        }
 
-            projectile.transform.SetPositionAndRotation(m_StartPoint.position, m_StartPoint.rotation);
-            projectile.Setup(IsOwner, fireColor, OnProjectileDestroy);
-            m_AudioSource.PlayOneShot(m_AudioClip);
+        GameObject newObject = m_ProjectilePooler.GetItem();
+        if (!newObject.TryGetComponent(out Projectile projectile))
+        {
+            Utils.Log("Projectile component not found on projectile object.", 1);
+            return;
+        }
 
-            if (newObject.TryGetComponent(out Rigidbody rigidBody))
-            {
-                rigidBody.isKinematic = true;
-                rigidBody.isKinematic = false;
-                Vector3 force = m_StartPoint.forward * m_LaunchSpeed;
-                rigidBody.AddForce(force);
-            }
+        projectile.transform.SetPositionAndRotation(m_StartPoint.position, m_StartPoint.rotation);
+        projectile.Setup(IsOwner, fireColor, OnProjectileDestroy);
+        m_AudioSource.PlayOneShot(m_AudioClip);
 
-            m_ProjectileQueue.Add(projectile);
-            if (m_ProjectileQueue.Count > m_MaxProjectilesAllowed)
-            {
-                m_ProjectileQueue[0].ResetProjectile();
-            }
+        if (newObject.TryGetComponent(out Rigidbody rigidBody))
+        {
+            rigidBody.isKinematic = true;
+            rigidBody.isKinematic = false;
+            Vector3 force = m_StartPoint.forward * m_LaunchSpeed;
+            rigidBody.AddForce(force);
+        }
+
+        m_ProjectileQueue.Add(projectile);
+        if (m_ProjectileQueue.Count > m_MaxProjectilesAllowed)
+        {
+            m_ProjectileQueue[0].ResetProjectile();
         }
     }
 
