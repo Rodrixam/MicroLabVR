@@ -7,7 +7,7 @@ namespace Scripts.Editor
 {
     public class CheckMyObjectBeforeBuild : IPreprocessBuildWithReport
     {
-        private readonly bool _autoDeactivate = true;
+        private readonly bool _autoDeactivate = false;
     
         // The order in which this callback runs
         public int callbackOrder => 0;
