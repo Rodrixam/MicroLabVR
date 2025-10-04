@@ -8,9 +8,12 @@ namespace Scripts
 {
     public class TubeController : NetworkBehaviour
     {
+        [Header("Colliders")]
         [SerializeField] private Collider longCollider;
         [SerializeField] private Collider shortCollider;
-        
+
+        [Header("UI")] 
+        [SerializeField] private GameObject clock;
         [SerializeField] private Image pieImage;
         [SerializeField] private TextMeshProUGUI pieText;
         
@@ -96,6 +99,12 @@ namespace Scripts
         private void ChangeImageRPC(float ammount)
         {
             pieImage.fillAmount = ammount;
+        }
+
+
+        public void SetClockActive(bool state)
+        {
+            clock.SetActive(state);
         }
     }
 }

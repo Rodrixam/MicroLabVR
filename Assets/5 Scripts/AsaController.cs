@@ -57,7 +57,7 @@ namespace Scripts
                 {
                     _timeCounter.Value += Time.deltaTime;
                 
-                    if (_timeCounter.Value >= timeToGlow)
+                    if (!_isSterilized.Value && _timeCounter.Value >= timeToGlow)
                     {
                         _isSterilized.Value = true;
                         particle.Play();

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4319728083446597590}
   - component: {fileID: 8716582316431060917}
   - component: {fileID: 2234458867723264769}
+  - component: {fileID: 2986518107343557856}
   m_Layer: 0
   m_Name: S4
   m_TagString: Untagged
@@ -119,6 +120,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!136 &2986518107343557856
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985648018060163431}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.02
+  m_Height: 0.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.125, z: 0}
 --- !u!1 &2865924233924473634
 GameObject:
   m_ObjectHideFlags: 0
@@ -131,6 +155,7 @@ GameObject:
   - component: {fileID: 403128566185630137}
   - component: {fileID: 6626942390810033151}
   - component: {fileID: 825244198709889215}
+  - component: {fileID: 3016319238621702843}
   m_Layer: 0
   m_Name: S5
   m_TagString: Untagged
@@ -238,6 +263,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!136 &3016319238621702843
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2865924233924473634}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.02
+  m_Height: 0.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.125, z: 0}
 --- !u!1 &3071157078077904260
 GameObject:
   m_ObjectHideFlags: 0
@@ -250,6 +298,7 @@ GameObject:
   - component: {fileID: 3425227695400850608}
   - component: {fileID: 8455186848310916819}
   - component: {fileID: 8255789287223257451}
+  - component: {fileID: 9223045306265183699}
   m_Layer: 0
   m_Name: S1
   m_TagString: Untagged
@@ -357,6 +406,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!136 &9223045306265183699
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3071157078077904260}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.02
+  m_Height: 0.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.125, z: 0}
 --- !u!1 &3475284576108261291
 GameObject:
   m_ObjectHideFlags: 0
@@ -524,6 +596,7 @@ GameObject:
   - component: {fileID: 2822884952816381076}
   - component: {fileID: 8913082253684671926}
   - component: {fileID: 5795353089468195515}
+  - component: {fileID: 1295671334841913092}
   m_Layer: 0
   m_Name: S2
   m_TagString: Untagged
@@ -631,6 +704,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!136 &1295671334841913092
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6783136379693758816}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.02
+  m_Height: 0.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.125, z: 0}
 --- !u!1 &8356791991845452534
 GameObject:
   m_ObjectHideFlags: 0
@@ -643,6 +739,7 @@ GameObject:
   - component: {fileID: 7297023786723142509}
   - component: {fileID: 4842490213218913464}
   - component: {fileID: 9213054575435266759}
+  - component: {fileID: 5992517455970332395}
   m_Layer: 0
   m_Name: S3
   m_TagString: Untagged
@@ -750,3 +847,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!136 &5992517455970332395
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8356791991845452534}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.02
+  m_Height: 0.25
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.125, z: 0}

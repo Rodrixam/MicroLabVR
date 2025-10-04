@@ -55,7 +55,7 @@ namespace Scripts
                 _onFire.Value = true;
                 fire.SetActive(true);
                 
-                if (_tripod is not null)
+                if (_tripod is not null && !_tripod.IsOnFire())
                 {
                     _tripod.SetOnFire(true);
                 }
@@ -70,7 +70,7 @@ namespace Scripts
                 _onFire.Value = false;
                 fire.SetActive(false);
                 
-                if (_tripod is not null)
+                if (_tripod is not null && _tripod.IsOnFire())
                 {
                     _tripod.SetOnFire(false);
                 }

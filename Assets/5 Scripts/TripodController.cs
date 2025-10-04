@@ -66,5 +66,10 @@ namespace Scripts
             _glass.SetOnFire(false);
             _glass = null;
         }
+
+        public bool IsOnFire()
+        {
+            return _onFire.Value;
+        }
     }
 }

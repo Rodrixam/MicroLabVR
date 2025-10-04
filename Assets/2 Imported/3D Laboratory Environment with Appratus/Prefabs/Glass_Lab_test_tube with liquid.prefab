@@ -473,6 +473,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   longCollider: {fileID: -3187267688378093534}
   shortCollider: {fileID: 4921967918778426538}
+  clock: {fileID: 3799681523204384668}
   pieImage: {fileID: 3881870061714285235}
   pieText: {fileID: 2751749460964975237}
 --- !u!114 &908794674093724043
@@ -1070,6 +1071,12 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 6390968382792224437}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3799681523204384668 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7785151267686525225, guid: 048249d9a15aa3c459399751e860bde7,
+    type: 3}
+  m_PrefabInstance: {fileID: 6390968382792224437}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3799681523204384671 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7785151267686525226, guid: 048249d9a15aa3c459399751e860bde7,
@@ -1082,7 +1089,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 6390968382792224437}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 3799681523204384668}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16809ed3baa3d2341b75ec4c0aa874d0, type: 3}

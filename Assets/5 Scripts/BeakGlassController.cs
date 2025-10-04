@@ -121,7 +121,8 @@ namespace Scripts
         {
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.ReduceCollider();
-
+            tube.SetClockActive(true);
+            
             _tubes.Add(tube);
         }
 
@@ -129,6 +130,7 @@ namespace Scripts
         {
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.EnlargeColliders();
+            tube.SetClockActive(false);
         
             _tubes.Remove(tube);
         }
