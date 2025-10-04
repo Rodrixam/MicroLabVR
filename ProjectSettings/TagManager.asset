@@ -14,6 +14,8 @@ TagManager:
   - InteractivePoint
   - LimitZone
   - PenTip
+  - LighterTip
+  - BurnerFlame
   layers:
   - Default
   - TransparentFX
@@ -25,7 +27,7 @@ TagManager:
   - Mirror
   - Petri Interactive
   - Pen Interactive
-  - 
+  - Tube
   - 
   - 
   - 
