@@ -8,6 +8,7 @@ namespace Scripts
     {
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         
+        [Header("References")]
         // Material
         [SerializeField] private MeshRenderer pointRenderer;
         private Material _pointMaterial;
@@ -15,9 +16,13 @@ namespace Scripts
         // References
         private BunsenController _flameController;
         [SerializeField] ParticleSystem particle;
+
+        public TubeController _tubeController;
         
+        [Header("Variables")]
         // Variables
         [SerializeField] private float timeToGlow;
+        [SerializeField] private float alignMargin;
 
         private bool _isOnline;
         
@@ -53,6 +58,7 @@ namespace Scripts
         {
             if (!_isOnline || (_isOnline && IsOwner))
             {
+                // FLAME INTERACTION
                 if (_flameController is not null && IsTiltedCorrectly() && _timeCounter.Value < timeToGlow)
                 {
                     _timeCounter.Value += Time.deltaTime;
@@ -82,6 +88,12 @@ namespace Scripts
                         ChangeColor(0,_timeCounter.Value);
                     }
                 }
+                
+                // TUBE INTERACTION
+                if (IsAlignedWithTube())
+                {
+                    Debug.Log("I'm aligned!!");
+                }
             }
         }
 
@@ -105,17 +117,39 @@ namespace Scripts
             _pointMaterial.SetColor(EmissionColor, Color.red * normProgress);
         }
         
+        private bool IsAlignedWithTube()
+        {
+            if (_tubeController is null) return false;
+
+            float angle = Vector3.Angle(_tubeController.transform.up, -transform.right);
+            if (angle < alignMargin) return true;
+            
+            return false;
+        }
+        
         // COLLISION METHODS
         
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.CompareTag("BurnerFlame")) return;
-            _flameController = other.GetComponentInParent<BunsenController>();
+            if (other.CompareTag("BurnerFlame"))
+            {
+                _flameController = other.GetComponentInParent<BunsenController>();   
+            }
+            else if (other.CompareTag("TubeMouth"))
+            {
+                _tubeController = other.GetComponentInParent<TubeController>();
+            }
         }
         private void OnTriggerExit(Collider other)
         {
-            if (!other.CompareTag("BurnerFlame")) return;
-            _flameController = null;
+            if (!other.CompareTag("BurnerFlame"))
+            {
+                _flameController = null;
+            }
+            else if (other.CompareTag("TubeMouth"))
+            {
+                _tubeController = null;
+            }
         }
         
         // RPC METHODS

@@ -16,6 +16,7 @@ TagManager:
   - PenTip
   - LighterTip
   - BurnerFlame
+  - TubeMouth
   layers:
   - Default
   - TransparentFX
@@ -27,11 +28,11 @@ TagManager:
   - Mirror
   - Petri Interactive
   - Pen Interactive
-  - Tube
+  - Tube Interactive
   - Asa Interactive
   - Tripod Interactive
-  - 
-  - 
+  - Burner Interactive
+  - Incubator
   - 
   - 
   - 
