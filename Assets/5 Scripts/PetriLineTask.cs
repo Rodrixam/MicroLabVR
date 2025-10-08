@@ -1,14 +1,18 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
+
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
 {
-    public class PetriController : NetworkBehaviour
+    [RequireComponent(typeof(PetriController))]
+    public class PetriLineTask : NetworkBehaviour
     {
         // REFERENCES
         
         private Transform _penTip;
+        private PetriController _controller;
         
         [SerializeField] private GameObject divisionLines;
         
@@ -18,15 +22,14 @@ namespace Scripts
         
         [SerializeField] private ParticleSystem particles;
         
+        [SerializeField] CollisionReporter[] reporters;
+        
         // STATE VARIABLES
         
         private bool _isOnline;
         
         private readonly NetworkVariable<int> _netLinesProgress = 
             new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        
-        private readonly NetworkVariable<bool> _netIsGrabbed = 
-            new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         
         private readonly NetworkVariable<bool> _netFinishingLine = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -43,26 +46,6 @@ namespace Scripts
         private readonly NetworkVariable<Vector3> _netPenTipPosition = new(default,
             NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         
-        void Awake()
-        {   
-            // SET COLLISION CALLS
-            
-            foreach (var reporter in GetComponentsInChildren<CollisionReporter>())
-            {
-                reporter.onTriggerEntered += (other) =>
-                {
-                    if (!reporter.CompareTag("InteractivePoint")) return;
-                    PointReached(other);
-                };
-            
-                reporter.onTriggerExited += (_) =>
-                {
-                    if (!reporter.CompareTag("LimitZone")) return;
-                    PenLifted();
-                };
-            }
-        }
-
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -76,9 +59,27 @@ namespace Scripts
             _isOnline = false;
             _netAllLinesDrawn.OnValueChanged -= ChangeDivisionLinesActive;
         }
-
-        private void Start()
+        
+        private void OnEnable()
         {
+            _controller = GetComponent<PetriController>();
+            
+            // Set trigger collision events
+            foreach (var reporter in reporters)
+            {
+                reporter.onTriggerEntered += (other) =>
+                {
+                    if (!reporter.CompareTag("InteractivePoint")) return;
+                    PointReached(other);
+                };
+            
+                reporter.onTriggerExited += (_) =>
+                {
+                    if (!reporter.CompareTag("LimitZone")) return;
+                    PenLifted();
+                };
+            }
+            
             // Deactivate completed image
             divisionLines.SetActive(_netAllLinesDrawn.Value);
 
@@ -123,7 +124,7 @@ namespace Scripts
             }
                 
             // Update line renderer following pen tip
-            if (_netIsGrabbed.Value && _netFinishingLine.Value && (_penTip is not null || !IsOwner) 
+            if (_controller.IsGrabbed() && _netFinishingLine.Value && (_penTip is not null || !IsOwner) 
                 && lineRenderers[_netLinesProgress.Value].positionCount > 1)
             {
                 lineRenderers[_netLinesProgress.Value].SetPosition(0, _netInteractivePointsPosition[_netLinesProgress.Value + 1]);
@@ -140,17 +141,13 @@ namespace Scripts
             // ------------------------- LOCAL -------------------------
             if (!_isOnline)
             {
-                // Set grabbed true
-                _netIsGrabbed.Value = true;
-            
                 // Activate interactive point
                 interactivePoints[_netLinesProgress.Value + 1].SetActive(true); 
             }
             // ------------------------- ONLINE -------------------------
             else
             {
-                // If online, it must request ownership first
-                RequestGrabServerRPC(true);
+                RequestInteractivePointActiveChangeRPC(_netLinesProgress.Value + 1, true);
             }
         }
         
@@ -162,9 +159,6 @@ namespace Scripts
             // ------------------------- LOCAL -------------------------
             if (!_isOnline)
             {
-                // Set grabbed false
-                _netIsGrabbed.Value = false;
-                
                 // Deactivate interactive points
                 foreach (var p in interactivePoints)
                 {
@@ -180,9 +174,6 @@ namespace Scripts
             // ------------------------- ONLINE -------------------------
             else if(IsOwner)
             {
-                // Set grabbed false
-                _netIsGrabbed.Value = false;
-                
                 // Deactivate interactive points
                 for(var i = 0; i < interactivePoints.Length; i++)
                 {
@@ -203,8 +194,7 @@ namespace Scripts
 
         private void PointReached(Collider other)
         {
-            if (!other.CompareTag("PenTip") || !_netIsGrabbed.Value || _netAllLinesDrawn.Value || (_isOnline && !IsOwner)) return;
-            Debug.Log("[OWNER]: Point reached by pen tip");
+            if (!other.CompareTag("PenTip") || !_controller.IsGrabbed() || _netAllLinesDrawn.Value || (_isOnline && !IsOwner)) return;
         
             // Set penTip transform if null
             if (_penTip == null)
@@ -260,6 +250,9 @@ namespace Scripts
                         
                         // Victory particles
                         particles.Play();
+                        
+                        // Update Petri Controller
+                        _controller.CompleteActivity();
                         return;
                     }
                 
@@ -352,30 +345,6 @@ namespace Scripts
         }
 
         // RPC METHODS
-        
-        [ServerRpc(RequireOwnership = false)]
-        private void RequestGrabServerRPC(bool value, ServerRpcParams rpcParams = default)
-        {   
-            // Change ownership
-            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
-            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
-            
-            // Change variables
-            SetGrabbedClientRpc(value);
-        }
-        
-        [Rpc(SendTo.Owner)]
-        private void SetGrabbedClientRpc(bool value)
-        {   
-            // Change grab state
-            _netIsGrabbed.Value = value;
-            
-            // LOCAL - Activate interactive point
-            interactivePoints[_netLinesProgress.Value + 1].SetActive(true); 
-            
-            // SYNC - Activate interactive point
-            RequestInteractivePointActiveChangeRPC(_netLinesProgress.Value + 1, true);
-        }
         
         [Rpc(SendTo.ClientsAndHost)]
         private void RequestParticleSystemPlayRPC()
