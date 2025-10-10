@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Scripts;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -112,7 +111,7 @@ namespace Scripts
 
                 foreach (var tube in _tubes)
                 {
-                    tube.AddBoilTime(Time.deltaTime);
+                    tube.TubeTimer.AddBoilTime(Time.deltaTime);
                 }
             }
         }

@@ -82,7 +82,9 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   pointRenderer: {fileID: 2343044582507870157}
   particle: {fileID: 6674085536468378688}
+  _tubeController: {fileID: 0}
   timeToGlow: 7
+  alignMargin: 15
 --- !u!54 &8401804224904124647
 Rigidbody:
   m_ObjectHideFlags: 0
