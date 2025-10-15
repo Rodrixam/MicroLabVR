@@ -52,8 +52,6 @@ public class PetriController : NetworkBehaviour
         littlePetri.SetCollidersState(false);
     }
     
-
-
     // NETWORK METHODS
         
     public override void OnNetworkSpawn()

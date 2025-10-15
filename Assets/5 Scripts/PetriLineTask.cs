@@ -1,4 +1,5 @@
 using System;
+using Scripts;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -67,13 +68,13 @@ namespace Scripts
             // Set trigger collision events
             foreach (var reporter in reporters)
             {
-                reporter.onTriggerEntered += (other) =>
+                reporter.OnTriggerEntered += (other) =>
                 {
                     if (!reporter.CompareTag("InteractivePoint")) return;
                     PointReached(other);
                 };
             
-                reporter.onTriggerExited += (_) =>
+                reporter.OnTriggerExited += (_) =>
                 {
                     if (!reporter.CompareTag("LimitZone")) return;
                     PenLifted();

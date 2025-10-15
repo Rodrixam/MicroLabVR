@@ -12,12 +12,14 @@ namespace Scripts
         // Material
         [SerializeField] private MeshRenderer pointRenderer;
         private Material _pointMaterial;
+        
+        [SerializeField] private MeshRenderer sampleRenderer;
+        private TubePickSampleTask.Samples _sample = TubePickSampleTask.Samples.None;
 
         // References
         private BunsenController _flameController;
         [SerializeField] ParticleSystem particle;
 
-        public TubeController _tubeController;
         
         [Header("Variables")]
         // Variables
@@ -29,7 +31,7 @@ namespace Scripts
         // Network Variables
         private readonly NetworkVariable<float> _timeCounter = new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<bool> _isSterilized = new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        
+        public bool isSterilized => _isSterilized.Value;
         
         // METHODS
         
@@ -52,6 +54,8 @@ namespace Scripts
         {
             _pointMaterial = pointRenderer.material;
             _pointMaterial.SetColor(EmissionColor, Color.red * 0);
+            
+            sampleRenderer.enabled = false;
         }
 
         void Update()
@@ -66,6 +70,7 @@ namespace Scripts
                     if (!_isSterilized.Value && _timeCounter.Value >= timeToGlow)
                     {
                         _isSterilized.Value = true;
+                        sampleRenderer.enabled = false;
                         particle.Play();
                     }
 
@@ -88,26 +93,19 @@ namespace Scripts
                         ChangeColor(0,_timeCounter.Value);
                     }
                 }
-                
-                // TUBE INTERACTION
-                if (IsAlignedWithTube())
-                {
-                    Debug.Log("I'm aligned!!");
-                }
             }
         }
 
         private bool IsTiltedCorrectly()
         {
-            float z = transform.localEulerAngles.z;
-
-            // Convert 0–360 range into -180–180
-            if (z > 180f) z -= 360f;
-
-            if (Mathf.Abs(z - (-45f)) <= 5f) // 5° tolerance
+            float tiltAngle = Vector3.Angle(-transform.right, Vector3.up);
+            var gap = Mathf.Abs(tiltAngle - 45f);
+            if (gap <= alignMargin)
             {
+                Debug.Log($"[ASA]: I'm tilting correctly! :D {gap}");
                 return true;
             }
+            Debug.Log($"[ASA]: I'm not tilting correctly! :C {gap}");
             return false;
         }
 
@@ -115,16 +113,6 @@ namespace Scripts
         {
             float normProgress = current / timeToGlow;
             _pointMaterial.SetColor(EmissionColor, Color.red * normProgress);
-        }
-        
-        private bool IsAlignedWithTube()
-        {
-            if (_tubeController is null) return false;
-
-            float angle = Vector3.Angle(_tubeController.transform.up, -transform.right);
-            if (angle < alignMargin) return true;
-            
-            return false;
         }
         
         // COLLISION METHODS
@@ -135,20 +123,12 @@ namespace Scripts
             {
                 _flameController = other.GetComponentInParent<BunsenController>();   
             }
-            else if (other.CompareTag("TubeMouth"))
-            {
-                _tubeController = other.GetComponentInParent<TubeController>();
-            }
         }
         private void OnTriggerExit(Collider other)
         {
-            if (!other.CompareTag("BurnerFlame"))
+            if (other.CompareTag("BurnerFlame"))
             {
                 _flameController = null;
-            }
-            else if (other.CompareTag("TubeMouth"))
-            {
-                _tubeController = null;
             }
         }
         
@@ -165,12 +145,18 @@ namespace Scripts
         {
             RequestGrabServerRPC();
         }
-        
-        // ACCESS METHODS
 
-        public bool IsSterilized()
+        public bool AttachMicrobe(TubePickSampleTask.Samples sample, Material sampleMat)
         {
-            return _isSterilized.Value;
+            if (_sample == TubePickSampleTask.Samples.None)
+            {
+                _sample = sample;
+                sampleRenderer.material  = sampleMat;
+                sampleRenderer.enabled = true;
+                _isSterilized.Value = false;
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -1,18 +1,21 @@
-using System;
 using UnityEngine;
 
-public class CollisionReporter : MonoBehaviour
+// ReSharper disable once CheckNamespace
+namespace Scripts
 {
-    public System.Action<Collider> onTriggerEntered;
-    public System.Action<Collider> onTriggerExited;
-
-    void OnTriggerEnter(Collider other)
+    public class CollisionReporter : MonoBehaviour
     {
-        onTriggerEntered?.Invoke(other);
-    }
+        public System.Action<Collider> OnTriggerEntered;
+        public System.Action<Collider> OnTriggerExited;
 
-    void OnTriggerExit(Collider other)
-    {
-        onTriggerExited?.Invoke(other);
+        void OnTriggerEnter(Collider other)
+        {
+            OnTriggerEntered?.Invoke(other);
+        }
+
+        void OnTriggerExit(Collider other)
+        {
+            OnTriggerExited?.Invoke(other);
+        }
     }
 }

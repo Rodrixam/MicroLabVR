@@ -37,6 +37,7 @@ public class TubeTimerController : NetworkBehaviour
         pieImage.fillOrigin = (int) Image.Origin360.Right;
         pieImage.fillAmount = 1;
     }
+    
     public void AddBoilTime(float time)
     {
         if (_isOnline && !IsOwner) return;

@@ -17,6 +17,7 @@ namespace Scripts
         private LighterController _lighter = null;
 
         private readonly NetworkVariable<bool> _onFire = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        public bool onFire => _onFire.Value;
 
         private bool _isOnline = false;
         
