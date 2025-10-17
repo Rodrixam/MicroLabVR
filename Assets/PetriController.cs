@@ -1,56 +1,30 @@
-using System;
 using System.Collections.Generic;
 using Scripts;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class PetriController : NetworkBehaviour
 {
-    // ACTIVITIES:
-    // - DRAW LINES
-    // - SEED MICROBES
-    private readonly NetworkVariable<int> _activityIndex = 
-        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    private readonly NetworkVariable<bool> _lpDetachable = 
-        new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private readonly NetworkVariable<bool> _lpIsAttached = 
-        new(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    private bool _isOnline;
-    
     // References
     
-    [SerializeField] private PetriLineTask lineTask;
-    [SerializeField] private LittlePetriController littlePetri;
-    
     [SerializeField] private List<Collider> colliders;
-    [SerializeField] private XRSocketInteractor socket;
+    [SerializeField] private PetriLineTask lineTask;
+    [SerializeField] private LidPetriController lidPetri;
 
+    public PetriLineTask LineTask => lineTask;
+    
     // Network Variables
 
-    private readonly NetworkVariable<bool> _netIsGrabbed =
+    private readonly NetworkVariable<bool> _isGrabbed =
         new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
+    public bool isGrabbed => _isGrabbed.Value;
     
-    private void Awake()
-    {
-        // Subscribe to socket events
-        socket.selectEntered.AddListener(OnObjectPlaced);
-    }
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
-        // Always unsubscribe to avoid leaks
-        socket.selectEntered.RemoveListener(OnObjectPlaced);
-    }
-
-    private void OnEnable()
-    {   
-        littlePetri.SetCollidersState(false);
-    }
+    private readonly NetworkVariable<int> _activityIndex = 
+        new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public int activityIndex => _activityIndex.Value;
+    
+    
+    private bool _isOnline;
     
     // NETWORK METHODS
         
@@ -70,24 +44,18 @@ public class PetriController : NetworkBehaviour
 
     public void Grab()
     {
-
+        Debug.Log("[PETRI CONTROLLER]: I'm grabbing");
         // ------------------------- LOCAL -------------------------
         if (!_isOnline)
         {
             // Set grabbed true
-            _netIsGrabbed.Value = true;
+            _isGrabbed.Value = true;
         }
         // ------------------------- ONLINE -------------------------
         else
         {
             // If online, it must request ownership first
             RequestGrabServerRPC(true);
-        }
-
-        if (_lpDetachable.Value && _lpIsAttached.Value)
-        {
-            SetCollidersState(false);
-            littlePetri.SetCollidersState(true);
         }
     }
 
@@ -97,26 +65,56 @@ public class PetriController : NetworkBehaviour
         if (!_isOnline || (_isOnline && IsOwner))
         {
             // Set grabbed false
-            _netIsGrabbed.Value = false;
+            _isGrabbed.Value = false;
         }
         else
         {
             Debug.LogError("Petri dropped by not owner... a fix for delay in ownership assignation might be needed");
         }
+    }
+    
+    // ACCESS METHODS
+
+    public void CompleteActivity()
+    {
+        if (_isOnline && !IsOwner) return;
         
-        if (_lpDetachable.Value)
+        _activityIndex.Value++;
+
+        switch (_activityIndex.Value)
         {
-            SetCollidersState(true);
-            if (_lpIsAttached.Value)
-            {
-                littlePetri.SetCollidersState(false);   
-            }
+            case 1:
+                lineTask.enabled = false;
+                lidPetri.SetDetachable(true);
+                
+                if (lidPetri.isGrabbed)
+                {
+                    if (!_isOnline)
+                    {
+                        SetCollidersState(true);
+                        lidPetri.SetCollidersState(false);
+                    }
+                    else
+                    {
+                        SetLidPetriCollidersStateRPC(true);
+                        SetCollidersStateRPC(false);
+                    }
+                }
+                break;
         }
     }
     
-    private void OnObjectPlaced(SelectEnterEventArgs args)
+    public void SetCollidersState(bool state)
     {
-        littlePetri = args.interactableObject.transform.GetComponentInChildren<LittlePetriController>();
+        foreach(var col in colliders)
+        {
+            col.enabled = state;
+        }
+    }
+
+    public void SetLidReference(LidPetriController lidController)
+    {
+        lidPetri = lidController;
     }
     
     // RPC METHODS
@@ -136,74 +134,8 @@ public class PetriController : NetworkBehaviour
     private void SetGrabbedClientRpc(bool value)
     {
         // Change grab state
-        _netIsGrabbed.Value = value;
+        _isGrabbed.Value = value;
     }
-    
-    // ACCESS METHODS
-    
-    public bool IsGrabbed()
-    {
-        return _netIsGrabbed.Value;
-    }
-
-    public void CompleteActivity()
-    {
-        if (_isOnline && !IsOwner) return;
-        
-        _activityIndex.Value++;
-
-        switch (_activityIndex.Value)
-        {
-            case 1:
-                lineTask.enabled = false;
-                _lpDetachable.Value = true;
-                
-                if (_netIsGrabbed.Value)
-                {
-                    if (!_isOnline)
-                    {
-                        littlePetri.SetCollidersState(true);
-                        SetCollidersState(false);
-                    }
-                    else
-                    {
-                        SetLittlePetriCollidersStateRPC(true);
-                        SetCollidersStateRPC(false);
-                    }
-                }
-                break;
-        }
-    }
-
-    public void DetachLittlePetri()
-    {
-        if (!_isOnline || (_isOnline && IsOwner))
-        {
-            _lpIsAttached.Value = false;   
-        }
-    }
-
-    public void AttachLittlePetri()
-    {
-        if (!_isOnline || (_isOnline && IsOwner))
-        {
-            _lpIsAttached.Value = true;   
-        }
-
-        if (!_netIsGrabbed.Value)
-        {
-            littlePetri.SetCollidersState(false);
-        }
-    }
-    
-    private void SetCollidersState(bool state)
-    {
-        foreach(var col in colliders)
-        {
-            col.enabled = state;
-        }
-    }
-
 
     [Rpc(SendTo.ClientsAndHost)]
     private void SetCollidersStateRPC(bool state)
@@ -214,10 +146,9 @@ public class PetriController : NetworkBehaviour
         }
     }
     
-    
     [Rpc(SendTo.ClientsAndHost)]
-    private void SetLittlePetriCollidersStateRPC(bool state)
+    private void SetLidPetriCollidersStateRPC(bool state)
     {
-        littlePetri.SetCollidersState(state);
+        lidPetri.SetCollidersState(state);
     }
 }

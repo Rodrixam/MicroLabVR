@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Scripts;
 using Unity.Netcode;
@@ -10,9 +9,12 @@ public class CottonLidController : NetworkBehaviour
     [Header("References")] [SerializeField]
     private List<Collider> colliders;
 
+    // Visuals
     [SerializeField] private GameObject arrowsUI;
+    [SerializeField] private GameObject warningUI;
     [SerializeField] private MeshRenderer lidRenderer;
 
+    // Transforms
     [SerializeField] private Transform body;
     [SerializeField] private Transform handler;
 
@@ -42,7 +44,9 @@ public class CottonLidController : NetworkBehaviour
     void Start()
     {
         SetActiveCollidersState(false);
-
+        arrowsUI.SetActive(false);
+        warningUI.SetActive(false);
+        
         _handlerRb = handler.GetComponent<Rigidbody>();
         _interactable = handler.GetComponent<XRGrabInteractable>();
 
@@ -96,8 +100,12 @@ public class CottonLidController : NetworkBehaviour
                 {
                     if (!_isOnline)
                     {
+                        // variables
                         _isOpen.Value = true;
+                        
+                        // visuals
                         arrowsUI.SetActive(false);
+                        warningUI.SetActive(true);
                         lidRenderer.enabled = false;
                     }
                     else
@@ -187,6 +195,7 @@ public class CottonLidController : NetworkBehaviour
         {
             Debug.Log("[COTTON LID]: Hello, now I'm flamed");
             _isFlamed.Value = true;
+            warningUI.SetActive(false);
         }
     }
 

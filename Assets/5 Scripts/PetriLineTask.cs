@@ -1,29 +1,25 @@
-using System;
-using Scripts;
 using Unity.Netcode;
 using UnityEngine;
-
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
 {
-    [RequireComponent(typeof(PetriController))]
+    [RequireComponent(typeof(LidPetriController))]
     public class PetriLineTask : NetworkBehaviour
     {
         // REFERENCES
         
         private Transform _penTip;
-        private PetriController _controller;
+        private LidPetriController _lidController;
+        
+        [SerializeField] private CollisionReporter[] reporters;
         
         [SerializeField] private GameObject divisionLines;
         
         [SerializeField] private GameObject[] interactivePoints;
-        
         [SerializeField] private LineRenderer[] lineRenderers;
         
         [SerializeField] private ParticleSystem particles;
-        
-        [SerializeField] CollisionReporter[] reporters;
         
         // STATE VARIABLES
         
@@ -35,8 +31,9 @@ namespace Scripts
         private readonly NetworkVariable<bool> _netFinishingLine = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     
-        private readonly NetworkVariable<bool> _netAllLinesDrawn = 
+        private readonly NetworkVariable<bool> _allLinesDrawn = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        public bool allLinesDrawn => _allLinesDrawn.Value;
         
         // NETWORKED POSITIONS
 
@@ -51,19 +48,19 @@ namespace Scripts
         {
             base.OnNetworkSpawn();
             _isOnline = true;
-            _netAllLinesDrawn.OnValueChanged += ChangeDivisionLinesActive;
+            _allLinesDrawn.OnValueChanged += ChangeDivisionLinesActive;
         }
 
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
             _isOnline = false;
-            _netAllLinesDrawn.OnValueChanged -= ChangeDivisionLinesActive;
+            _allLinesDrawn.OnValueChanged -= ChangeDivisionLinesActive;
         }
         
         private void OnEnable()
         {
-            _controller = GetComponent<PetriController>();
+            _lidController = GetComponent<LidPetriController>();
             
             // Set trigger collision events
             foreach (var reporter in reporters)
@@ -82,7 +79,7 @@ namespace Scripts
             }
             
             // Deactivate completed image
-            divisionLines.SetActive(_netAllLinesDrawn.Value);
+            divisionLines.SetActive(_allLinesDrawn.Value);
 
             // Deactivate interactive points
             foreach (var t in interactivePoints)
@@ -99,7 +96,7 @@ namespace Scripts
 
         private void Update()
         {
-            if (_netAllLinesDrawn.Value) return;
+            if (_allLinesDrawn.Value) return;
             
             // Update interactive points positions from the owner
             // (gravity moves the object between syncs otherwise)
@@ -125,7 +122,7 @@ namespace Scripts
             }
                 
             // Update line renderer following pen tip
-            if (_controller.IsGrabbed() && _netFinishingLine.Value && (_penTip is not null || !IsOwner) 
+            if (_lidController.isGrabbed && _netFinishingLine.Value && (_penTip is not null || !IsOwner) 
                 && lineRenderers[_netLinesProgress.Value].positionCount > 1)
             {
                 lineRenderers[_netLinesProgress.Value].SetPosition(0, _netInteractivePointsPosition[_netLinesProgress.Value + 1]);
@@ -137,7 +134,8 @@ namespace Scripts
         
         public void Grab()
         {
-            if (_netAllLinesDrawn.Value) return;
+            if (_allLinesDrawn.Value) return;
+            Debug.Log("[PETRI LINE TASK]: I'm grabbing");
 
             // ------------------------- LOCAL -------------------------
             if (!_isOnline)
@@ -154,7 +152,7 @@ namespace Scripts
         
         public void Drop()
         {
-            if (_netAllLinesDrawn.Value) return;
+            if (_allLinesDrawn.Value) return;
             _penTip = null;
 
             // ------------------------- LOCAL -------------------------
@@ -195,7 +193,10 @@ namespace Scripts
 
         private void PointReached(Collider other)
         {
-            if (!other.CompareTag("PenTip") || !_controller.IsGrabbed() || _netAllLinesDrawn.Value || (_isOnline && !IsOwner)) return;
+            Debug.Log("[PETRI LINE TASK]: Point reached. Checking for validity... " +
+                      $"{!other.CompareTag("PenTip")} - {!_lidController.isGrabbed} - {_allLinesDrawn.Value} - {_isOnline && !IsOwner}");
+            if (!other.CompareTag("PenTip") || !_lidController.isGrabbed || _allLinesDrawn.Value || (_isOnline && !IsOwner)) return;
+            Debug.Log("[PETRI LINE TASK]: Point reached valid.");
         
             // Set penTip transform if null
             if (_penTip == null)
@@ -232,7 +233,7 @@ namespace Scripts
                     // Complete drawing
                     if (_netLinesProgress.Value > 2)
                     {
-                        _netAllLinesDrawn.Value = true;
+                        _allLinesDrawn.Value = true;
                         
                         // Activate final draw
                         divisionLines.SetActive(true);
@@ -253,7 +254,7 @@ namespace Scripts
                         particles.Play();
                         
                         // Update Petri Controller
-                        _controller.CompleteActivity();
+                        _lidController.PetriController.CompleteActivity();
                         return;
                     }
                 
@@ -286,7 +287,7 @@ namespace Scripts
                     // Complete drawing
                     if (_netLinesProgress.Value > 2)
                     {
-                        _netAllLinesDrawn.Value = true;
+                        _allLinesDrawn.Value = true;
                         
                         // Deactivate interactive points
                         for (int i = 0; i < interactivePoints.Length; i++) {
@@ -314,7 +315,7 @@ namespace Scripts
 
         private void PenLifted()
         {
-            if (_netAllLinesDrawn.Value) return;
+            if (_allLinesDrawn.Value) return;
             
             _penTip = null;
 

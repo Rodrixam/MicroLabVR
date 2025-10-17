@@ -4,7 +4,10 @@ using UnityEngine;
 
 public class TubePickSampleTask : MonoBehaviour
 {
-    [Header("References")]
+    [Header("References")] 
+    [SerializeField] private TubeController controller;
+    
+    [Header("Colliders")] 
     [SerializeField] private CollisionReporter startPoint;
     [SerializeField] private CollisionReporter triggerZone;
     [SerializeField] private CollisionReporter pickupPoint;
@@ -13,10 +16,9 @@ public class TubePickSampleTask : MonoBehaviour
     [SerializeField] private Samples sample;
     [SerializeField] private Material sampleMaterial;
 
-    private bool _tracking = false;
-    public bool tracking => _tracking;
-
-    private List<AsaController> _asaTracking = new();
+    public bool tracking { get; private set; }
+    
+    private readonly List<AsaController> _asaTracking = new();
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -24,47 +26,62 @@ public class TubePickSampleTask : MonoBehaviour
         // Set trigger collision events
         startPoint.OnTriggerEntered += (other) =>
         {
-            if (!_tracking || !other.CompareTag("AsaTip")) return;
+            if (!tracking || !other.CompareTag("AsaTip")) return;
 
             var asa = other.GetComponentInParent<AsaController>();
             if (asa is not null && asa.isSterilized)
             {
                 _asaTracking.Add(asa);   
+                asa.StartMicrobeParticles();
             }
         };
             
         triggerZone.OnTriggerExited += (other) =>
         {
-            if (!_tracking || !other.CompareTag("AsaTip")) return;
+            if (!tracking || !other.CompareTag("AsaTip")) return;
 
-            _asaTracking.Remove(other.GetComponentInParent<AsaController>());
+            var asa = other.GetComponentInParent<AsaController>();
+            if (_asaTracking.Remove(asa))
+            {
+                asa.StopMicrobeParticles();
+            }
+        };
+        triggerZone.OnTriggerStayed += (other) =>
+        {
+            foreach (var asa in _asaTracking)
+            {
+                float distance = Vector3.Cross(triggerZone.transform.up, other.transform.position - triggerZone.transform.position).magnitude;
+                float normalized = Mathf.InverseLerp(0f, 0.01f, distance);
+                
+                asa.SetMicrobeParticlesColor(Color.Lerp(Color.green, Color.red, normalized));
+            }
         };
         
         pickupPoint.OnTriggerEntered += (other) =>
         {
-            if (!_tracking || !other.CompareTag("AsaTip")) return;
+            if (!tracking || !other.CompareTag("AsaTip")) return;
 
             var asa = other.GetComponentInParent<AsaController>();
             if (asa is not null && _asaTracking.Contains(asa))
             {
-                asa.AttachMicrobe(sample, sampleMaterial);
+                asa.AttachMicrobe(sample, controller.TubeTimer.boilTime, sampleMaterial);
             }
         };
     }
 
     public void ActivateTracking()
     {
-        _tracking = true;
+        tracking = true;
     }
 
     public void DeactivateTracking()
     {
-        _tracking = false;
+        tracking = false;
         _asaTracking.Clear();
     }
     
     public enum Samples
     {
-        None, eColi, sAureus, Spores
+        None, EColi, SAureus, Spores
     }
 }

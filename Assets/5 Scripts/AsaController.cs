@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
@@ -15,10 +16,12 @@ namespace Scripts
         
         [SerializeField] private MeshRenderer sampleRenderer;
         private TubePickSampleTask.Samples _sample = TubePickSampleTask.Samples.None;
+        private float _sampleTime = 0;
 
         // References
         private BunsenController _flameController;
-        [SerializeField] ParticleSystem particle;
+        [SerializeField] ParticleSystem victoryParticles;
+        [SerializeField] ParticleSystem microbesParticles;
 
         
         [Header("Variables")]
@@ -70,14 +73,15 @@ namespace Scripts
                     if (!_isSterilized.Value && _timeCounter.Value >= timeToGlow)
                     {
                         _isSterilized.Value = true;
+                        
                         sampleRenderer.enabled = false;
-                        particle.Play();
+                        _sample = TubePickSampleTask.Samples.None;
+                        _sampleTime = 0;
+                        
+                        victoryParticles.Play();
                     }
 
-                    if (!_isOnline)
-                    {
-                        ChangeColor(0,_timeCounter.Value);
-                    }
+                    ChangeColor(0,_timeCounter.Value);
                 }
                 else if(_timeCounter.Value > 0)
                 {
@@ -88,10 +92,7 @@ namespace Scripts
                         _timeCounter.Value = 0;
                     }
                     
-                    if (!_isOnline)
-                    {
-                        ChangeColor(0,_timeCounter.Value);
-                    }
+                    ChangeColor(0,_timeCounter.Value);
                 }
             }
         }
@@ -102,10 +103,8 @@ namespace Scripts
             var gap = Mathf.Abs(tiltAngle - 45f);
             if (gap <= alignMargin)
             {
-                Debug.Log($"[ASA]: I'm tilting correctly! :D {gap}");
                 return true;
             }
-            Debug.Log($"[ASA]: I'm not tilting correctly! :C {gap}");
             return false;
         }
 
@@ -113,6 +112,20 @@ namespace Scripts
         {
             float normProgress = current / timeToGlow;
             _pointMaterial.SetColor(EmissionColor, Color.red * normProgress);
+        }
+
+        public void SetMicrobeParticlesColor(Color color)
+        {
+            var main = microbesParticles.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(color);
+        }
+        public void StartMicrobeParticles()
+        {
+            microbesParticles.Play();
+        }
+        public void StopMicrobeParticles()
+        {
+            microbesParticles.Stop();
         }
         
         // COLLISION METHODS
@@ -146,11 +159,12 @@ namespace Scripts
             RequestGrabServerRPC();
         }
 
-        public bool AttachMicrobe(TubePickSampleTask.Samples sample, Material sampleMat)
+        public bool AttachMicrobe(TubePickSampleTask.Samples sample, float sampleTime, Material sampleMat)
         {
             if (_sample == TubePickSampleTask.Samples.None)
             {
                 _sample = sample;
+                _sampleTime = sampleTime;
                 sampleRenderer.material  = sampleMat;
                 sampleRenderer.enabled = true;
                 _isSterilized.Value = false;

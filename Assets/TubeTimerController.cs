@@ -14,6 +14,8 @@ public class TubeTimerController : NetworkBehaviour
         new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private readonly NetworkVariable<float> _boilTime =
         new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public float boilTime => _boilTime.Value;
     
     private bool _isOnline;
     
