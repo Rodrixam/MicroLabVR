@@ -301,7 +301,6 @@ public class CottonLidController : NetworkBehaviour
         lidRenderer.enabled = true;
     }
     
-    
     [Rpc(SendTo.ClientsAndHost)]
     private void TurnOffArrowsRPC()
     {        

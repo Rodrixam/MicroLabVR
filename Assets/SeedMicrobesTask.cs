@@ -1,0 +1,144 @@
+using Scripts;
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
+public class SeedMicrobesTask : MonoBehaviour
+{
+    [SerializeField] private XRGrabInteractable grabInteractable;
+    [SerializeField] private PetriController mainController;
+    
+    [Header("Collision Reporters")]
+    [SerializeField] private CollisionReporter eColiReporter;
+    [SerializeField] private CollisionReporter sAureusReporter;
+    [SerializeField] private CollisionReporter sporesReporter;
+
+    [Header("Seed Lines")] 
+    [SerializeField] private GameObject eColiLines;
+    [SerializeField] private GameObject sAureusLines;
+    [SerializeField] private GameObject sporesLines;
+
+    [Header("Renderers")] 
+    [SerializeField] private MeshRenderer eColiColliderRenderer;
+    [SerializeField] private MeshRenderer sAureusColliderRenderer;
+    [SerializeField] private MeshRenderer sporesColliderRenderer;
+
+    private bool _eColiSeeded, _sAureusSeeded, _sporesSeeded;
+    private float _eColiTime, _sAureusTime, _sporesTime;
+
+
+    private void Awake()
+    {
+        eColiLines.SetActive(false);
+        sAureusLines.SetActive(false);
+        sporesLines.SetActive(false);
+        
+        eColiColliderRenderer.enabled = false;
+        sAureusColliderRenderer.enabled = false;
+        sporesColliderRenderer.enabled = false;
+        
+        grabInteractable.selectEntered.AddListener(Grab);
+    }
+
+    private void OnDestroy()
+    {
+        grabInteractable.selectEntered.RemoveListener(Grab);
+    }
+
+    void Start()
+    {   
+        // Set reporters actions
+        
+        eColiReporter.OnTriggerEntered += (other) =>
+        {
+            // skip cases
+            if (_eColiSeeded || !other.CompareTag("AsaTip")) return;
+            
+            // asa values not valid
+            var asa = other.GetComponentInParent<AsaController>();
+            if (asa is null || asa.sample != TubePickSampleTask.Samples.EColi) return;
+            
+            // store values
+            _eColiSeeded = true;
+            _eColiTime = asa.sampleTime;
+            
+            // set visuals
+            eColiLines.SetActive(true);
+            eColiColliderRenderer.enabled = false;
+        };
+        
+        sAureusReporter.OnTriggerEntered += (other) =>
+        {
+            // skip cases
+            if (_sAureusSeeded || !other.CompareTag("AsaTip")) return;
+            
+            // asa values not valid
+            var asa = other.GetComponentInParent<AsaController>();
+            if (asa is null || asa.sample != TubePickSampleTask.Samples.SAureus) return;
+            
+            // store values
+            _sAureusSeeded = true;
+            _sAureusTime = asa.sampleTime;
+            
+            // set visuals
+            sAureusLines.SetActive(true);
+            sAureusColliderRenderer.enabled = false;
+        };
+        
+        sporesReporter.OnTriggerEntered += (other) =>
+        {
+            // skip cases
+            if (_sporesSeeded || !other.CompareTag("AsaTip")) return;
+            
+            // asa values not valid
+            var asa = other.GetComponentInParent<AsaController>();
+            if (asa is null || asa.sample != TubePickSampleTask.Samples.Spores) return;
+            
+            // store values
+            _sporesSeeded = true;
+            _sporesTime = asa.sampleTime;
+            
+            // set visuals
+            sporesLines.SetActive(true);
+            sporesColliderRenderer.enabled = false;
+        };
+    }
+
+    private void Grab(SelectEnterEventArgs args)
+    {
+        if (mainController.activityIndex <= 0 || !IsPickedByHand(args)) return;
+        
+        if (!_eColiSeeded)
+        {
+            eColiColliderRenderer.enabled = true;
+        }
+        if (!_sAureusSeeded)
+        {
+            sAureusColliderRenderer.enabled = true;
+        }
+        if (!_sporesSeeded)
+        {
+            sporesColliderRenderer.enabled = true;
+        }
+    }
+
+    public void Drop()
+    {
+        if (mainController.activityIndex <= 0) return;
+        
+        eColiColliderRenderer.enabled = false;
+        sAureusColliderRenderer.enabled = false;
+        sporesColliderRenderer.enabled = false;
+    }
+    
+    
+    private bool IsPickedByHand(SelectEnterEventArgs args)
+    {
+        if (args.interactorObject.transform.CompareTag("LeftHand") ||
+            args.interactorObject.transform.CompareTag("RightHand"))
+        {
+            return true;
+        }
+        return false;
+    }
+}

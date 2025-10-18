@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Scripts;
 using Unity.Netcode;
@@ -8,10 +9,13 @@ public class PetriController : NetworkBehaviour
     // References
     
     [SerializeField] private List<Collider> colliders;
-    [SerializeField] private PetriLineTask lineTask;
     [SerializeField] private LidPetriController lidPetri;
 
+    [SerializeField] private PetriLineTask lineTask;
+    [SerializeField] private SeedMicrobesTask seedTask;
+    
     public PetriLineTask LineTask => lineTask;
+    public SeedMicrobesTask SeedTask => seedTask;
     
     // Network Variables
 
@@ -25,7 +29,13 @@ public class PetriController : NetworkBehaviour
     
     
     private bool _isOnline;
-    
+
+
+    private void Start()
+    {
+        seedTask.enabled = false;
+    }
+
     // NETWORK METHODS
         
     public override void OnNetworkSpawn()
@@ -85,6 +95,8 @@ public class PetriController : NetworkBehaviour
         {
             case 1:
                 lineTask.enabled = false;
+                seedTask.enabled = true;
+                
                 lidPetri.SetDetachable(true);
                 
                 if (lidPetri.isGrabbed)

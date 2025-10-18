@@ -9,26 +9,31 @@ namespace Scripts
     {
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         
-        [Header("References")]
-        // Material
+        [Header("Renderers & UI")]
+        
         [SerializeField] private MeshRenderer pointRenderer;
         private Material _pointMaterial;
         
         [SerializeField] private MeshRenderer sampleRenderer;
-        private TubePickSampleTask.Samples _sample = TubePickSampleTask.Samples.None;
-        private float _sampleTime = 0;
 
-        // References
-        private BunsenController _flameController;
+        [SerializeField] private GameObject warningUI;
+        
+        [Header("Particles")]
         [SerializeField] ParticleSystem victoryParticles;
         [SerializeField] ParticleSystem microbesParticles;
-
         
         [Header("Variables")]
-        // Variables
+        
         [SerializeField] private float timeToGlow;
         [SerializeField] private float alignMargin;
-
+        private BunsenController _flameController;
+        
+        private TubePickSampleTask.Samples _sample = TubePickSampleTask.Samples.None;
+        public TubePickSampleTask.Samples sample => _sample;
+        
+        private float _sampleTime = 0;
+        public float sampleTime =>  _sampleTime;
+        
         private bool _isOnline;
         
         // Network Variables
@@ -59,6 +64,7 @@ namespace Scripts
             _pointMaterial.SetColor(EmissionColor, Color.red * 0);
             
             sampleRenderer.enabled = false;
+            warningUI.SetActive(false);
         }
 
         void Update()
@@ -73,6 +79,7 @@ namespace Scripts
                     if (!_isSterilized.Value && _timeCounter.Value >= timeToGlow)
                     {
                         _isSterilized.Value = true;
+                        warningUI.SetActive(false);
                         
                         sampleRenderer.enabled = false;
                         _sample = TubePickSampleTask.Samples.None;
@@ -145,6 +152,23 @@ namespace Scripts
             }
         }
         
+        // INTERACTION METHODS
+        
+        public void Grab()
+        {
+            RequestGrabServerRPC();
+
+            if (!isSterilized)
+            {
+                warningUI.SetActive(true);
+            }
+        }
+
+        public void Drop()
+        {
+            warningUI.SetActive(false);
+        }
+        
         // RPC METHODS
         
         [ServerRpc(RequireOwnership = false)]
@@ -154,10 +178,6 @@ namespace Scripts
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
             GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
         }
-        public void ChangeOwnership()
-        {
-            RequestGrabServerRPC();
-        }
 
         public bool AttachMicrobe(TubePickSampleTask.Samples sample, float sampleTime, Material sampleMat)
         {
@@ -165,9 +185,14 @@ namespace Scripts
             {
                 _sample = sample;
                 _sampleTime = sampleTime;
+                
                 sampleRenderer.material  = sampleMat;
                 sampleRenderer.enabled = true;
+                
                 _isSterilized.Value = false;
+                warningUI.SetActive(true);
+                StopMicrobeParticles();
+                
                 return true;
             }
             return false;

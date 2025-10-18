@@ -793,11 +793,6 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 3958286316
       objectReference: {fileID: 0}
-    - target: {fileID: 2510059176024043134, guid: 96afb2fcdebbba442badf46bfb8961d5,
-        type: 3}
-      propertyPath: m_TrackScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3048498775050334523, guid: 96afb2fcdebbba442badf46bfb8961d5,
         type: 3}
       propertyPath: m_Name
@@ -3788,11 +3783,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5827789861829009220}
     m_Modifications:
+    - target: {fileID: 3650572173191512969, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: sampleMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 42a60c8556cf07c42b501a4edf0acfec, type: 2}
     - target: {fileID: 4661188770769472284, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_Name
       value: Glass_Lab_test_tube with liquid
       objectReference: {fileID: 0}
+    - target: {fileID: 5414773608222739179, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 42a60c8556cf07c42b501a4edf0acfec, type: 2}
     - target: {fileID: 5468512139057648038, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6147,12 +6152,6 @@ Transform:
   - {fileID: 487947423}
   m_Father: {fileID: 5827789861829009220}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: -180}
---- !u!1 &1667823737 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6042731431698525218, guid: 26e77237b4ac60846baa32788e42e42d,
-    type: 3}
-  m_PrefabInstance: {fileID: 4997621537631426780}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1763889561 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8275397685822493948, guid: 8edf1e2f1e0f31c4fbb22ab6f39410ff,
@@ -6698,11 +6697,6 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 2630438229
       objectReference: {fileID: 0}
-    - target: {fileID: 3404489654208277288, guid: 0620816e35a86a146b78ee3be2417f4d,
-        type: 3}
-      propertyPath: m_TrackScale
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7858730440937505553, guid: 0620816e35a86a146b78ee3be2417f4d,
         type: 3}
       propertyPath: m_Name
@@ -6788,11 +6782,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5827789861829009220}
     m_Modifications:
+    - target: {fileID: 3650572173191512969, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: sample
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3650572173191512969, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: sampleMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 826669e627de8184b8b144d640883992, type: 2}
     - target: {fileID: 4661188770769472284, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_Name
       value: Glass_Lab_test_tube with liquid (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5414773608222739179, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 826669e627de8184b8b144d640883992, type: 2}
     - target: {fileID: 5468512139057648038, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6899,11 +6908,26 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: cfd7071873142d141a08b089bc8bb990, type: 2}
+    - target: {fileID: 3650572173191512969, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: sample
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3650572173191512969, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: sampleMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 7cb0634446b261a40955143a93303689, type: 2}
     - target: {fileID: 4661188770769472284, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_Name
       value: Glass_Lab_test_tube with liquid (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 5414773608222739179, guid: cbb3159864b0a1348ab992ae9813d64d,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7cb0634446b261a40955143a93303689, type: 2}
     - target: {fileID: 5468512139057648038, guid: cbb3159864b0a1348ab992ae9813d64d,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -7963,6 +7987,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a2c3f58f42dfc74abe5ea626573a138, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &4997621537631426783 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5483879773625594474, guid: 26e77237b4ac60846baa32788e42e42d,
+    type: 3}
+  m_PrefabInstance: {fileID: 4997621537631426780}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &4997621537631426788 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5748574427127134403, guid: 26e77237b4ac60846baa32788e42e42d,
@@ -8465,7 +8495,7 @@ PrefabInstance:
         type: 3}
       propertyPath: divisionLines
       value: 
-      objectReference: {fileID: 1667823737}
+      objectReference: {fileID: 4997621537631426783}
     - target: {fileID: 1884391952533183673, guid: bd3e65ade3d6efb4a9945b32f3c8e5c7,
         type: 3}
       propertyPath: 'reporters.Array.data[0]'

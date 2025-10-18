@@ -1,5 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable once CheckNamespace
@@ -8,6 +10,7 @@ namespace Scripts
     public class TubeController : NetworkBehaviour
     {
         [Header("References")]
+        [SerializeField] private XRGrabInteractable _grabInteractable;
         [SerializeField] private CottonLidController cottonLid;
         [SerializeField] private TubeTimerController tubeTimer;
         [SerializeField] private TubePickSampleTask pickTask;
@@ -37,6 +40,8 @@ namespace Scripts
             SetClockActive(false);
             
             pickTask.DeactivateTracking();
+
+            _grabInteractable.selectEntered.AddListener(Grab);
         }
 
         private void Update()
@@ -54,9 +59,10 @@ namespace Scripts
 
         // INTERACTION METHODS
         
-        public void Grab()
+        // this one gets added at start
+        public void Grab(SelectEnterEventArgs args)
         {
-            if (!cottonLid.isOpen)
+            if (!cottonLid.isOpen && IsPickedByHand(args))
             {
                 if (!_isOnline)
                 {
@@ -82,6 +88,16 @@ namespace Scripts
                     SetCottonLidCollidersStateRPC(false);
                 }
             }
+        }
+
+        private bool IsPickedByHand(SelectEnterEventArgs args)
+        {
+            if (args.interactorObject.transform.CompareTag("LeftHand") ||
+                args.interactorObject.transform.CompareTag("RightHand"))
+            {
+                return true;
+            }
+            return false;
         }
 
         // Meant for use in BeakGlass sockets
