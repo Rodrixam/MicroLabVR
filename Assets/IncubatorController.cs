@@ -1,16 +1,22 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class IncubatorController : MonoBehaviour
 {
+    [Header("Door Elements")]
     [SerializeField] private Transform handler;
     [SerializeField] private Transform grabbableHandler;
     [SerializeField] private HingeJoint joint;
     
     [SerializeField] private float maxDistance;
-    
     private XRGrabInteractable _interactable;
+    
+    [Header("Sockets")]
+    [SerializeField] private List<XRSocketInteractor>  sockets;
+    [SerializeField] private TextMeshProUGUI visualText;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -51,5 +57,11 @@ public class IncubatorController : MonoBehaviour
         Rigidbody rbHandler = handler.GetComponent<Rigidbody>();
         rbHandler.linearVelocity = Vector3.zero;
         rbHandler.angularVelocity = Vector3.zero;
+    }
+    
+    
+    public void DebugHelloWorld(string origin)
+    {
+        Debug.Log($"[INCUBATOR]: Hello, I'm Mr. Incubator, this is {origin}'s show, I eat the Petri.");
     }
 }

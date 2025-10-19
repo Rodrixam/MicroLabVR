@@ -24,22 +24,38 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.51276154"
-     inkscape:cx="-39.004486"
-     inkscape:cy="96.536102"
+     inkscape:zoom="1.4503086"
+     inkscape:cx="387.84848"
+     inkscape:cy="304.76271"
      inkscape:window-width="1920"
      inkscape:window-height="1001"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer3" />
+     inkscape:current-layer="layer5" />
   <defs
      id="defs2" />
   <g
      inkscape:groupmode="layer"
-     id="layer2"
-     inkscape:label="Capa 2"
+     id="layer4"
+     inkscape:label="Background"
+     style="display:inline"
      sodipodi:insensitive="true">
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.99999;stroke-linecap:round;stroke-linejoin:round;stop-color:#000000"
+       id="rect1708"
+       width="209.7973"
+       height="206.87837"
+       x="0.36486486"
+       y="1.0945946" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Limits"
+     sodipodi:insensitive="true"
+     style="display:none"
+     inkscape:highlight-color="#f3d15a">
     <g
        inkscape:label="Capa 1"
        inkscape:groupmode="layer"
@@ -99,7 +115,8 @@
   <g
      inkscape:groupmode="layer"
      id="layer3"
-     inkscape:label="Capa 3">
+     inkscape:label="Lines"
+     style="display:inline">
     <path
        style="fill:none;stroke:#ffffff;stroke-width:4.99999;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;stop-color:#000000"
        d="M 47.614863,67.317566 C 78.445945,24.628379 147.04054,25.722972 175.86486,66.587837 136.45946,31.378379 79.358108,36.668919 53.27027,70.236487 101.7973,35.574324 147.22297,49.804054 171.30406,70.966216 126.97297,47.797297 87.567568,50.898649 60.385135,74.797298 98.695946,55.45946 138.28378,58.013513 164.73649,75.709459 134.81757,67.682433 97.236484,59.837838 67.317567,79.722973 97.543267,70.601352 132.39592,70.41892 156.70946,80.635135 124.23649,75.344595 98.695946,76.621622 75.709459,84.648648 96.689192,80.817567 128.06757,80.817567 146.49324,86.837838 126.06081,84.101351 96.689189,86.472973 84.466216,90.304054 100.1554,88.47973 121.86486,89.027027 135,93.222973 c -15.68919,-1.641892 -31.19595,0.364865 -40.864865,2.736487 10.033785,-0.912163 24.993245,0.729729 30.466215,3.101351 -10.94594,-1.094595 -20.43243,1.824329 -22.43919,2.736489 4.74325,-0.18244 12.9527,1.64188 14.95946,2.73648"
@@ -109,4 +126,10 @@
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96" />
   </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="eColi_0_mins"
+     style="display:inline"
+     inkscape:highlight-color="#0067ff" />
 </svg>
