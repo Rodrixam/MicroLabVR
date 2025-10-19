@@ -8,13 +8,15 @@ public class TubeTimerController : NetworkBehaviour
     [SerializeField] private Image pieImage;
     [SerializeField] private TextMeshProUGUI pieText;
         
-    private readonly float[] _timeIntervals = {60, 240, 300};
+    private readonly float[] _timeIntervals = {60, 60, 60};
+    private readonly int[] _minutes = {1, 5, 10};
 
     private readonly NetworkVariable<int> _interval =
         new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private readonly NetworkVariable<float> _boilTime =
         new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    public int interval => _interval.Value;
     public float boilTime => _boilTime.Value;
     
     private bool _isOnline;
@@ -35,14 +37,15 @@ public class TubeTimerController : NetworkBehaviour
     private void Start()
     {
         pieImage.type = Image.Type.Filled;
+        pieImage.fillClockwise = false;
         pieImage.fillMethod = Image.FillMethod.Radial360;
-        pieImage.fillOrigin = (int) Image.Origin360.Right;
+        pieImage.fillOrigin = (int) Image.Origin360.Top;
         pieImage.fillAmount = 1;
     }
     
     public void AddBoilTime(float time)
     {
-        if (_isOnline && !IsOwner) return;
+        if ((_isOnline && !IsOwner) || _interval.Value > 2) return;
             
         _boilTime.Value += time;
 
@@ -54,11 +57,11 @@ public class TubeTimerController : NetworkBehaviour
 
             if (_isOnline)
             {
-                ChangeTextRPC(((int) (_timeIntervals[_interval.Value] / 60f)).ToString());
+                ChangeTextRPC(_minutes[_interval.Value - 1].ToString());
             }
             else
             {
-                pieText.text = ((int) (_timeIntervals[_interval.Value] / 60f)).ToString();   
+                pieText.text = _minutes[_interval.Value - 1].ToString();   
             }
         }
             

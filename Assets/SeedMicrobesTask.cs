@@ -1,5 +1,6 @@
 using Scripts;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -14,9 +15,9 @@ public class SeedMicrobesTask : MonoBehaviour
     [SerializeField] private CollisionReporter sporesReporter;
 
     [Header("Seed Lines")] 
-    [SerializeField] private GameObject eColiLines;
-    [SerializeField] private GameObject sAureusLines;
-    [SerializeField] private GameObject sporesLines;
+    [SerializeField] private Image eColiLines;
+    [SerializeField] private Image sAureusLines;
+    [SerializeField] private Image sporesLines;
 
     [Header("Renderers")] 
     [SerializeField] private MeshRenderer eColiColliderRenderer;
@@ -24,14 +25,17 @@ public class SeedMicrobesTask : MonoBehaviour
     [SerializeField] private MeshRenderer sporesColliderRenderer;
 
     private bool _eColiSeeded, _sAureusSeeded, _sporesSeeded;
-    private float _eColiTime, _sAureusTime, _sporesTime;
+    private int _eColiInterval, _sAureusInterval, _sporesInterval;
+    public int eColiInterval => _eColiInterval;
+    public int sAureusInterval => _sAureusInterval;
+    public int sporesInterval => _sporesInterval;
 
 
     private void Awake()
     {
-        eColiLines.SetActive(false);
-        sAureusLines.SetActive(false);
-        sporesLines.SetActive(false);
+        eColiLines.gameObject.SetActive(false);
+        sAureusLines.gameObject.SetActive(false);
+        sporesLines.gameObject.SetActive(false);
         
         eColiColliderRenderer.enabled = false;
         sAureusColliderRenderer.enabled = false;
@@ -60,10 +64,10 @@ public class SeedMicrobesTask : MonoBehaviour
             
             // store values
             _eColiSeeded = true;
-            _eColiTime = asa.sampleTime;
+            _eColiInterval = asa.sampleInterval;
             
             // set visuals
-            eColiLines.SetActive(true);
+            eColiLines.gameObject.SetActive(true);
             eColiColliderRenderer.enabled = false;
         };
         
@@ -78,10 +82,10 @@ public class SeedMicrobesTask : MonoBehaviour
             
             // store values
             _sAureusSeeded = true;
-            _sAureusTime = asa.sampleTime;
+            _sAureusInterval = asa.sampleInterval;
             
             // set visuals
-            sAureusLines.SetActive(true);
+            sAureusLines.gameObject.SetActive(true);
             sAureusColliderRenderer.enabled = false;
         };
         
@@ -96,10 +100,10 @@ public class SeedMicrobesTask : MonoBehaviour
             
             // store values
             _sporesSeeded = true;
-            _sporesTime = asa.sampleTime;
+            _sporesInterval = asa.sampleInterval;
             
             // set visuals
-            sporesLines.SetActive(true);
+            sporesLines.gameObject.SetActive(true);
             sporesColliderRenderer.enabled = false;
         };
     }
@@ -131,7 +135,6 @@ public class SeedMicrobesTask : MonoBehaviour
         sporesColliderRenderer.enabled = false;
     }
     
-    
     private bool IsPickedByHand(SelectEnterEventArgs args)
     {
         if (args.interactorObject.transform.CompareTag("LeftHand") ||
@@ -140,5 +143,26 @@ public class SeedMicrobesTask : MonoBehaviour
             return true;
         }
         return false;
+    }
+    
+    public bool IsCompleted()
+    {
+        return _eColiSeeded && _sAureusSeeded && _sporesSeeded;
+    }
+
+    public void SetMicrobesImages(TubePickSampleTask.Samples microbe, Sprite newImage)
+    {
+        switch (microbe)
+        {
+            case TubePickSampleTask.Samples.EColi:
+                eColiLines.sprite = newImage;
+                break;
+            case TubePickSampleTask.Samples.SAureus:
+                sAureusLines.sprite = newImage;
+                break;
+            case TubePickSampleTask.Samples.Spores:
+                sporesLines.sprite = newImage;
+                break;
+        }
     }
 }

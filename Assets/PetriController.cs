@@ -7,7 +7,7 @@ using UnityEngine;
 public class PetriController : NetworkBehaviour
 {
     // References
-    
+    [SerializeField] private MeshRenderer _petriRenderer;
     [SerializeField] private List<Collider> colliders;
     [SerializeField] private LidPetriController lidPetri;
 
@@ -127,6 +127,13 @@ public class PetriController : NetworkBehaviour
     public void SetLidReference(LidPetriController lidController)
     {
         lidPetri = lidController;
+    }
+
+    public void RemoveAgar()
+    {
+        List<Material> matList = new List<Material>(_petriRenderer.materials);
+        matList.RemoveAt(1); // index 1 = second material
+        _petriRenderer.materials = matList.ToArray();
     }
     
     // RPC METHODS

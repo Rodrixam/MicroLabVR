@@ -30,9 +30,9 @@ namespace Scripts
         
         private TubePickSampleTask.Samples _sample = TubePickSampleTask.Samples.None;
         public TubePickSampleTask.Samples sample => _sample;
-        
-        private float _sampleTime = 0;
-        public float sampleTime =>  _sampleTime;
+
+        private int _sampleInterval;
+        public int sampleInterval => _sampleInterval;
         
         private bool _isOnline;
         
@@ -83,7 +83,6 @@ namespace Scripts
                         
                         sampleRenderer.enabled = false;
                         _sample = TubePickSampleTask.Samples.None;
-                        _sampleTime = 0;
                         
                         victoryParticles.Play();
                     }
@@ -179,12 +178,12 @@ namespace Scripts
             GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
         }
 
-        public bool AttachMicrobe(TubePickSampleTask.Samples sample, float sampleTime, Material sampleMat)
+        public bool AttachMicrobe(TubePickSampleTask.Samples sample, int interval, Material sampleMat)
         {
             if (_sample == TubePickSampleTask.Samples.None)
             {
                 _sample = sample;
-                _sampleTime = sampleTime;
+                _sampleInterval = interval;
                 
                 sampleRenderer.material  = sampleMat;
                 sampleRenderer.enabled = true;

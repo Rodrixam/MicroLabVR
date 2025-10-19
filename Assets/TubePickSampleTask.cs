@@ -64,7 +64,7 @@ public class TubePickSampleTask : MonoBehaviour
             var asa = other.GetComponentInParent<AsaController>();
             if (asa is not null && _asaTracking.Contains(asa))
             {
-                asa.AttachMicrobe(sample, controller.TubeTimer.boilTime, sampleMaterial);
+                asa.AttachMicrobe(sample, controller.TubeTimer.interval, sampleMaterial);
             }
         };
     }

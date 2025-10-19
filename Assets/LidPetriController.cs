@@ -1,12 +1,14 @@
 using System.Collections.Generic;
-using Scripts;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 public class LidPetriController : NetworkBehaviour
 {
+    [SerializeField] private XRGrabInteractable grabInteractable;
     [SerializeField] private List<Collider> colliders;
     [SerializeField] private XRSocketInteractor socket;
     [SerializeField] private PetriController  petriController;
@@ -32,12 +34,13 @@ public class LidPetriController : NetworkBehaviour
     
     private void Start()
     {
-        Debug.Log(socket);
+        grabInteractable.selectEntered.AddListener(Grab);
         socket.selectEntered.AddListener(OnObjectPlaced);
     }
     public override void OnDestroy()
     {
         base.OnDestroy();
+        grabInteractable.selectEntered.RemoveListener(Grab);
         socket.selectEntered.RemoveListener(OnObjectPlaced);
     }
     
@@ -57,8 +60,9 @@ public class LidPetriController : NetworkBehaviour
     
     // INTERACTION METHODS
 
-    public void Grab()
+    private void Grab(SelectEnterEventArgs args)
     {
+        if (!IsPickedByHand(args)) return;
         Debug.Log("[LID PETRI]: I'm grabbing");
         
         // ------------------------- LOCAL -------------------------
@@ -180,4 +184,15 @@ public class LidPetriController : NetworkBehaviour
     {
         _lpDetachable.Value = state;
     }
+    
+    private bool IsPickedByHand(SelectEnterEventArgs args)
+    {
+        if (args.interactorObject.transform.CompareTag("LeftHand") ||
+            args.interactorObject.transform.CompareTag("RightHand"))
+        {
+            return true;
+        }
+        return false;
+    }
+
 }
