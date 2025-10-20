@@ -150,18 +150,21 @@ public class SeedMicrobesTask : MonoBehaviour
         return _eColiSeeded && _sAureusSeeded && _sporesSeeded;
     }
 
-    public void SetMicrobesImages(TubePickSampleTask.Samples microbe, Sprite newImage)
-    {
+    public void SetMicrobesImages(TubePickSampleTask.Samples microbe, Sprite newImage, Color newColor)
+    {   
         switch (microbe)
         {
             case TubePickSampleTask.Samples.EColi:
                 eColiLines.sprite = newImage;
+                eColiLines.color = newColor;
                 break;
             case TubePickSampleTask.Samples.SAureus:
                 sAureusLines.sprite = newImage;
+                sAureusLines.color = newColor;
                 break;
             case TubePickSampleTask.Samples.Spores:
                 sporesLines.sprite = newImage;
+                sporesLines.color = newColor;
                 break;
         }
     }

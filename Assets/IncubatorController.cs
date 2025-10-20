@@ -123,13 +123,13 @@ public class IncubatorController : MonoBehaviour
             lid.PetriController.RemoveAgar();
             
             int eColiInterval = lid.PetriController.SeedTask.eColiInterval;
-            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.EColi, eColiSprites[eColiInterval]);
+            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.EColi, eColiSprites[eColiInterval], Color.white);
             
             int sAureusInterval = lid.PetriController.SeedTask.sAureusInterval;
-            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.SAureus, eColiSprites[sAureusInterval]);
+            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.SAureus, eColiSprites[sAureusInterval], Color.white);
             
             int sporesInterval = lid.PetriController.SeedTask.eColiInterval;
-            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.Spores, eColiSprites[sporesInterval]);
+            lid.PetriController.SeedTask.SetMicrobesImages(TubePickSampleTask.Samples.Spores, eColiSprites[sporesInterval], Color.white);
         }
         
         _audioSource.clip = correctBell;
