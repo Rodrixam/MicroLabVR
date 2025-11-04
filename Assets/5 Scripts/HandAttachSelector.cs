@@ -3,33 +3,40 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-[RequireComponent(typeof(XRGrabInteractable))]
-public class HandedAttachSelector : MonoBehaviour
+// ReSharper disable once CheckNamespace
+namespace Scripts
 {
-    public Transform leftAttach;
-    public Transform rightAttach;
-
-    private XRGrabInteractable grab;
-
-    private void Awake()
+    [RequireComponent(typeof(XRGrabInteractable))]
+    public class HandedAttachSelector : MonoBehaviour
     {
-        grab = GetComponent<XRGrabInteractable>();
-    }
-    
-    void OnEnable() => grab.selectEntered.AddListener(OnGrab);
-    void OnDisable() => grab.selectEntered.RemoveListener(OnGrab);
+        public Transform leftAttach;
+        public Transform rightAttach;
 
-    private void OnGrab(SelectEnterEventArgs args)
-    {
-        if (args.interactorObject is XRBaseInteractor interactor)
+        private XRGrabInteractable _grab;
+
+        private void Awake()
         {
-            if (interactor.transform.CompareTag("LeftHand"))
+            _grab = GetComponent<XRGrabInteractable>();
+        }
+    
+        void OnEnable() => _grab.selectEntered.AddListener(OnGrab);
+        void OnDisable() => _grab.selectEntered.RemoveListener(OnGrab);
+
+        private void OnGrab(SelectEnterEventArgs args)
+        {
+            if (args.interactorObject is XRBaseInteractor interactor)
             {
-                grab.attachTransform = leftAttach;
-            }
-            else if (interactor.transform.CompareTag("RightHand"))
-            {
-                grab.attachTransform = rightAttach;  
+                if (interactor.transform.CompareTag("LeftHand"))
+                {
+                    _grab.attachTransform = leftAttach;
+                }
+                else if (interactor.transform.CompareTag("RightHand"))
+                {
+                    _grab.attachTransform = rightAttach;  
+                }
+                
+                transform.position = _grab.attachTransform.position;
+                transform.rotation = _grab.attachTransform.rotation;
             }
         }
     }

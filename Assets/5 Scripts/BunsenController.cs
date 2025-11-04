@@ -1,4 +1,3 @@
-using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -11,24 +10,26 @@ namespace Scripts
     {
         [SerializeField] private ValveController valve;
         [SerializeField] private GameObject fire;
-        
         [SerializeField] private XRSocketInteractor tripodSocket;
-        private TripodController _tripod = null;
-        private LighterController _lighter = null;
+        
+        private TripodController _tripod;
+        private LighterController _lighter;
 
         private readonly NetworkVariable<bool> _onFire = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         public bool onFire => _onFire.Value;
 
-        private bool _isOnline = false;
+        private bool _isOnline;
+        
+        // METHODS
         
         private void Awake()
         {
-            tripodSocket.selectEntered.AddListener(OnObjectPlaced);
+            tripodSocket.selectEntered.AddListener(OnTripodPlaced);
         }
         public override void OnDestroy()
         {
             base.OnDestroy();
-            tripodSocket.selectExited.RemoveListener(OnObjectRemoved);
+            tripodSocket.selectExited.RemoveListener(OnTripodRemoved);
         }
 
         public override void OnNetworkSpawn()
@@ -49,34 +50,52 @@ namespace Scripts
 
         void Update()
         {
+            // Only owner updates
             if (_isOnline && !IsOwner) return;
             
-            if (!_onFire.Value && valve.IsReleasingGas() && _lighter is not null && _lighter.IsActive())
+            // Turn on flame
+            if (!_onFire.Value && valve.releasingGas && _lighter is not null && _lighter.IsActive())
             {
                 _onFire.Value = true;
-                fire.SetActive(true);
                 
-                if (_tripod is not null && !_tripod.IsOnFire())
+                // Feedback
+                if (!_isOnline)
                 {
-                    _tripod.SetOnFire(true);
+                    fire.SetActive(true);
+                
+                    if (_tripod is not null && !_tripod.onFire)
+                    {
+                        _tripod.SetOnFire(true);
+                    }   
+                }
+                else
+                {
+                    SetFireRPC(true);
                 }
             }
 
-            if (_onFire.Value && !valve.IsReleasingGas())
+            // Turn off flame
+            if (_onFire.Value && !valve.releasingGas)
             {
-                if (_isOnline)
-                {
-                    SetFireRPC(false);
-                }
                 _onFire.Value = false;
-                fire.SetActive(false);
                 
-                if (_tripod is not null && _tripod.IsOnFire())
+                if (!_isOnline)
                 {
-                    _tripod.SetOnFire(false);
+                    fire.SetActive(false);
+                
+                    if (_tripod is not null && _tripod.onFire)
+                    {
+                        _tripod.SetOnFire(false);
+                    }
+                }
+                else
+                {
+                    SetFireRPC(false);    
                 }
             }
         }
+        
+        // COLLISION METHODS
 
         private void OnTriggerEnter(Collider other)
         {
@@ -92,8 +111,9 @@ namespace Scripts
             _lighter = null;
         }
         
+        // SOCKET METHODS
         
-        private void OnObjectPlaced(SelectEnterEventArgs args)
+        private void OnTripodPlaced(SelectEnterEventArgs args)
         {
             _tripod = args.interactableObject.transform.GetComponent<TripodController>();
             
@@ -102,16 +122,23 @@ namespace Scripts
                 _tripod.SetOnFire(true);
             }
         }
-        private void OnObjectRemoved(SelectExitEventArgs args)
+        private void OnTripodRemoved(SelectExitEventArgs args)
         {
             _tripod.SetOnFire(false);
             _tripod = null;
         }
         
+        // RPC METHODS
+        
         [Rpc(SendTo.ClientsAndHost)]
         private void SetFireRPC(bool state)
         {
             fire.SetActive(state);
+            
+            if (_tripod is not null && _tripod.onFire != state)
+            {
+                _tripod.SetOnFire(state);
+            }   
         }
     }
 }

@@ -23,6 +23,8 @@ namespace Scripts
 
         private bool _isOnline;
         
+        // NETWORK BEHAVIOUR METHODS
+        
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -60,33 +62,33 @@ namespace Scripts
         // INTERACTION METHODS
         
         // this one gets added at start
-        public void Grab(SelectEnterEventArgs args)
+        private void Grab(SelectEnterEventArgs args)
         {
-            if (!cottonLid.isOpen && IsPickedByHand(args))
+            // Don't change colliders if lid is open or if it wasn't grabbed by a hand
+            if (cottonLid.isOpen || !IsPickedByHand(args)) return;
+            
+            if (!_isOnline)
             {
-                if (!_isOnline)
-                {
-                    cottonLid.SetActiveCollidersState(true);   
-                }
-                else
-                {
-                    SetCottonLidCollidersStateRPC(true);
-                }
+                cottonLid.SetActiveCollidersState(true);   
+            }
+            else
+            {
+                SetCottonLidCollidersStateRPC(true);
             }
         }
 
         public void Drop()
         {
-            if (!cottonLid.isOpen)
+            // Don't change colliders if lid is open
+            if (cottonLid.isOpen) return;
+            
+            if (!_isOnline)
             {
-                if (!_isOnline)
-                {
-                    cottonLid.SetActiveCollidersState(false);   
-                }
-                else
-                {
-                    SetCottonLidCollidersStateRPC(false);
-                }
+                cottonLid.SetActiveCollidersState(false);
+            }
+            else
+            {
+                SetCottonLidCollidersStateRPC(false);
             }
         }
 
@@ -100,7 +102,8 @@ namespace Scripts
             return false;
         }
 
-        // Meant for use in BeakGlass sockets
+        // SOCKET METHODS, socket events sync automatically
+        
         public void ReduceCollider()
         {
             longCollider.enabled = false;

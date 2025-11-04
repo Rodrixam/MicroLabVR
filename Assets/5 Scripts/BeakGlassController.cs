@@ -10,20 +10,23 @@ namespace Scripts
 {
     public class BeakGlassController : NetworkBehaviour
     {
+        // References
         [SerializeField] private List<XRSocketInteractor> sockets;
         [SerializeField] private ParticleSystem bubbles;
 
+        private readonly List<TubeController> _tubes = new();
+        
+        // Parameters
         [SerializeField] private float timeToBoil;
     
+        // Variables
         private readonly NetworkVariable<float> _timeCounter = 
             new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    
         private readonly NetworkVariable<bool> _onFire = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<bool> _boiling = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-        private readonly List<TubeController> _tubes = new();
         private bool _isOnline;
 
         private void Awake()
@@ -31,8 +34,9 @@ namespace Scripts
             foreach (var sock in sockets)
             {
                 // Subscribe to socket events
-                sock.selectEntered.AddListener(OnObjectPlaced);
-                sock.selectExited.AddListener(OnObjectRemoved);   
+                // they get synchronized automatically
+                sock.selectEntered.AddListener(OnTubePlaced);
+                sock.selectExited.AddListener(OnTubeRemoved);   
             }
         }
 
@@ -42,8 +46,8 @@ namespace Scripts
             foreach (var sock in sockets)
             {
                 // Always unsubscribe to avoid leaks
-                sock.selectEntered.RemoveListener(OnObjectPlaced);
-                sock.selectExited.RemoveListener(OnObjectRemoved);
+                sock.selectEntered.RemoveListener(OnTubePlaced);
+                sock.selectExited.RemoveListener(OnTubeRemoved);
             }
         }
 
@@ -62,61 +66,55 @@ namespace Scripts
     
         private void Update()
         {
+            // Only owner updates
             if (_isOnline && !IsOwner) return;
         
+            // Heating
             if (_onFire.Value && _timeCounter.Value <= timeToBoil)
             {
                 _timeCounter.Value += Time.deltaTime;
 
+                // Boiling time reached
                 if (_timeCounter.Value > timeToBoil)
                 {
                     _boiling.Value = true;
-
-                    if (_isOnline)
-                    {
-                        ToggleParticlesRPC(true);
-                    }
-                    else
-                    {
-                        bubbles.Play();   
-                    }
+                    ToggleParticles(true);
                 }
             }
 
+            // Cooling
             if (!_onFire.Value && _timeCounter.Value > 0)
             {
                 _timeCounter.Value -= Time.deltaTime;
+                
                 if (_timeCounter.Value < 0)
                 {
                     _timeCounter.Value = 0;
                 }
             }
         
+            // Interactions while boiling
             if (_boiling.Value)
             {
+                // Turn off
                 if (!_onFire.Value)
                 {
                     _boiling.Value = false;
-                
-                    if (_isOnline)
-                    {
-                        ToggleParticlesRPC(true);
-                    }
-                    else
-                    {
-                        bubbles.Stop();   
-                    }
+                    ToggleParticles(false);
                     return;
                 }
 
+                // Heating tubes
                 foreach (var tube in _tubes)
                 {
                     tube.TubeTimer.AddBoilTime(Time.deltaTime);
                 }
             }
         }
+        
+        // SOCKET EVENTS
 
-        private void OnObjectPlaced(SelectEnterEventArgs args)
+        private void OnTubePlaced(SelectEnterEventArgs args)
         {
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.ReduceCollider();
@@ -125,7 +123,7 @@ namespace Scripts
             _tubes.Add(tube);
         }
 
-        private void OnObjectRemoved(SelectExitEventArgs args)
+        private void OnTubeRemoved(SelectExitEventArgs args)
         {
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.EnlargeColliders();
@@ -134,13 +132,47 @@ namespace Scripts
             _tubes.Remove(tube);
         }
 
-        public void SetOnFire(bool value)
-        {
-            if (_isOnline && !IsOwner) return;
+        // ON FIRE ACCESS METHODS
         
+        public void SetOnFireState(bool value)
+        {
+            if (!_isOnline)
+            {
+                _onFire.Value = value;
+            }
+            else
+            {
+                SetOnFireStateRPC(value);
+            }
+        }
+        
+        [Rpc(SendTo.Owner)]
+        private void SetOnFireStateRPC(bool value)
+        {
             _onFire.Value = value;
         }
-    
+
+        // PARTICLES METHODS
+        
+        private void ToggleParticles(bool value)
+        {
+            if (!_isOnline)
+            {
+                if (value)
+                {
+                    bubbles.Play();
+                }
+                else
+                {
+                    bubbles.Stop();      
+                }
+            }
+            else
+            {
+                ToggleParticlesRPC(value);
+            }
+        }
+        
         [Rpc(SendTo.ClientsAndHost)]
         private void ToggleParticlesRPC(bool value)
         {

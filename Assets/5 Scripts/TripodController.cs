@@ -8,13 +8,19 @@ namespace Scripts
 {
     public class TripodController : NetworkBehaviour
     {
-        private readonly NetworkVariable<bool> _onFire = 
-            new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        
+        // References
         [SerializeField] private XRSocketInteractor glassSocket;
         private BeakGlassController _glass;
+        
+        // Variables
+        private readonly NetworkVariable<bool> _onFire = 
+            new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        public bool onFire => _onFire.Value;
 
         private bool _isOnline;
+        
+        // NETWORK BEHAVIOUR METHODS
         
         private void Awake()
         {
@@ -37,39 +43,37 @@ namespace Scripts
             base.OnNetworkDespawn();
             _isOnline = false;
         }
+        
+        // INTERACTION METHODS
 
-        public void SetOnFire(bool onFire)
+        public void SetOnFire(bool state)
         {
-            if (_isOnline && !IsOwner) return;
-            
-            _onFire.Value = onFire;
-
+            // Called through BunsenController, already synced
             if (_glass is not null)
             {
-                _glass.SetOnFire(onFire);
+                _glass.SetOnFireState(state);
             }
+            
+            // Only owner changes value
+            if (_isOnline && !IsOwner) return;
+            _onFire.Value = state;
         }
+        
+        // SOCKET EVENTS
         
         private void OnObjectPlaced(SelectEnterEventArgs args)
         {
-            
             _glass = args.interactableObject.transform.GetComponent<BeakGlassController>();
             
             if (_onFire.Value)
             {
-                _glass.SetOnFire(true);
+                _glass.SetOnFireState(true);
             }
         }
         private void OnObjectRemoved(SelectExitEventArgs args)
         {
-            
-            _glass.SetOnFire(false);
+            _glass.SetOnFireState(false);
             _glass = null;
-        }
-
-        public bool IsOnFire()
-        {
-            return _onFire.Value;
         }
     }
 }

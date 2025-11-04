@@ -6,7 +6,7 @@ namespace Scripts
 {
     public class LighterController : NetworkBehaviour
     {
-        [SerializeField] LineRenderer fire;
+        [SerializeField] private LineRenderer fire;
     
         private bool _lightOn;
         private bool _isOnline;
