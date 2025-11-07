@@ -7,10 +7,10 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace Scripts
 {
     [RequireComponent(typeof(XRGrabInteractable))]
-    public class HandedAttachSelector : MonoBehaviour
+    public class HandlerSelector : MonoBehaviour
     {
-        public Transform leftAttach;
-        public Transform rightAttach;
+        public Transform leftHandler;
+        public Transform rightHandler;
 
         private XRGrabInteractable _grab;
 
@@ -24,21 +24,29 @@ namespace Scripts
 
         private void OnGrab(SelectEnterEventArgs args)
         {
+            Debug.Log("Grab is called");
             if (args.interactorObject is XRBaseInteractor interactor)
             {
-                if (interactor.transform.CompareTag("LeftHand"))
-                {
-                    _grab.attachTransform = leftAttach;
-                }
-                else if (interactor.transform.CompareTag("RightHand"))
-                {
-                    _grab.attachTransform = rightAttach;  
-                }
+                // Select left or right handler
+                Transform newHandler = _grab.attachTransform;
                 
-                transform.position = _grab.attachTransform.position;
-                transform.rotation = _grab.attachTransform.rotation;
+                if (interactor.transform.CompareTag("LeftHand"))
+                    newHandler = leftHandler;
+                else if (interactor.transform.CompareTag("RightHand"))
+                    newHandler = rightHandler;  
+
+                // Attach to the correct handler
+                if (_grab.attachTransform == newHandler) return;
+                _grab.attachTransform = newHandler;
+                transform.position = Vector3.zero;//newHandler.position - newHandler.localPosition;
+                transform.rotation = newHandler.rotation * Quaternion.Inverse(newHandler.localRotation);
             }
         }
     }
+    /*
+    // Update transform
+    if (newHandler is null) return;
+    transform.position = newHandler.position;
+    transform.rotation = newHandler.rotation;//*/
 }
 

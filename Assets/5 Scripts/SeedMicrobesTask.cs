@@ -209,8 +209,12 @@ namespace Scripts
             return _eColiSeeded && _sAureusSeeded && _sporesSeeded;
         }
 
+        // It's called from IncubatorController, from which it's already synchronized
         public void CallSetMicrobesImages(TubePickSampleTask.Samples microbe, Sprite newImage, Color newColor)
         {
+            
+            SetMicrobesImages(microbe, newImage, newColor);
+            /*
             if (!_isOnline)
             {
                 SetMicrobesImages(microbe, newImage, newColor);
@@ -218,7 +222,7 @@ namespace Scripts
             else
             {
                 SetMicrobesImagesRPC(microbe, newImage, newColor);
-            }
+            }*/
         }
         
         private void SetMicrobesImages(TubePickSampleTask.Samples microbe, Sprite newImage, Color newColor)
@@ -240,10 +244,11 @@ namespace Scripts
             }
         }
 
+        /*
         [Rpc(SendTo.ClientsAndHost)]
         private void SetMicrobesImagesRPC(TubePickSampleTask.Samples microbe, Sprite newImage, Color newColor)
         {
             SetMicrobesImages(microbe, newImage, newColor);
-        }
+        }*/
     }
 }
