@@ -7362,7 +7362,7 @@ MonoBehaviour:
   lidRenderer: {fileID: 7017102295327075452}
   body: {fileID: 6936155878318423216}
   handler: {fileID: 4671854100042772930}
-  rotationGoal: 180
+  rotationGoal: 90
   maxDistance: 0.1
 --- !u!114 &6047895723143799349
 MonoBehaviour:

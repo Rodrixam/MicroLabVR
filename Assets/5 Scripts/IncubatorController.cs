@@ -128,6 +128,8 @@ namespace Scripts
             if (_validPetri.Count < 4) { _completed = false; }
         }
 
+        // INTERACTION METHODS
+        
         public void CallCookThem()
         {
             if (!_isOnline)
@@ -171,6 +173,12 @@ namespace Scripts
         private void CookThemRPC()
         {
             CookThem();
+        }
+
+        public void RestoreToStartConditions()
+        {
+            _completed = false;
+            _validPetri.Clear();
         }
     }
 }

@@ -92,6 +92,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6447747817976722331}
     m_Modifications:
+    - target: {fileID: 2931381886676572569, guid: aab47d642ec9fd94ab69459ad6deedb1,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3724090118469892172, guid: aab47d642ec9fd94ab69459ad6deedb1,
         type: 3}
       propertyPath: m_Name
@@ -249,6 +254,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4095123827670811858, guid: f2629ace2826e974393b395f2af2bb50,
         type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4095123827670811858, guid: f2629ace2826e974393b395f2af2bb50,
+        type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 1ca7e3a0f2e21264bb050e8a04a7835c, type: 2}
@@ -325,6 +335,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_StaticEditorFlags
       value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 1178335646772287189, guid: 0464c51f3e579bd4ca5150116cebfe97,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: -2603305363060588089, guid: 0464c51f3e579bd4ca5150116cebfe97, type: 3}
@@ -431,6 +446,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6447747817976722331}
     m_Modifications:
+    - target: {fileID: 2931381886676572569, guid: aab47d642ec9fd94ab69459ad6deedb1,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3724090118469892172, guid: aab47d642ec9fd94ab69459ad6deedb1,
         type: 3}
       propertyPath: m_Name
@@ -588,6 +608,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4095123827670811858, guid: f2629ace2826e974393b395f2af2bb50,
         type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4095123827670811858, guid: f2629ace2826e974393b395f2af2bb50,
+        type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 1ca7e3a0f2e21264bb050e8a04a7835c, type: 2}
@@ -665,6 +690,11 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 64
       objectReference: {fileID: 0}
+    - target: {fileID: 1178335646772287189, guid: 0464c51f3e579bd4ca5150116cebfe97,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: -2603305363060588089, guid: 0464c51f3e579bd4ca5150116cebfe97, type: 3}
     m_RemovedGameObjects: []
@@ -685,6 +715,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6447747817976722331}
     m_Modifications:
+    - target: {fileID: 3416599108443167615, guid: 58d93148047363d45a12c673b277817d,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3777058534420937386, guid: 58d93148047363d45a12c673b277817d,
         type: 3}
       propertyPath: m_Name
@@ -770,6 +805,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6447747817976722331}
     m_Modifications:
+    - target: {fileID: 3416599108443167615, guid: 58d93148047363d45a12c673b277817d,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3777058534420937386, guid: 58d93148047363d45a12c673b277817d,
         type: 3}
       propertyPath: m_Name

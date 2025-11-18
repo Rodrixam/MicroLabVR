@@ -8,15 +8,18 @@ namespace Scripts
 {
     public class CottonLidController : NetworkBehaviour
     {
-        [Header("References")] [SerializeField]
-        private List<Collider> colliders;
+        // Colliders
+        [Header("Colliders")] 
+        [SerializeField] private List<Collider> colliders;
 
         // Visuals
+        [Header("Visuals")]
         [SerializeField] private GameObject arrowsUI;
         [SerializeField] private GameObject warningUI;
         [SerializeField] private MeshRenderer lidRenderer;
 
         // Transforms
+        [Header("Transform")]
         [SerializeField] private Transform body;
         [SerializeField] private Transform handler;
 
@@ -101,7 +104,7 @@ namespace Scripts
 
                 // Fix arrows orientation
                 // TODO: arrows are displayed on incorrect axis
-                arrowsUI.transform.rotation = Quaternion.Euler(0, body.rotation.y, 0);
+                arrowsUI.transform.localRotation = Quaternion.Euler(0, _rotationCounter, 0);
 
                 // Check if completed
                 if (Mathf.Abs(_rotationCounter) >= rotationGoal && AttachBallToHand())
@@ -146,7 +149,7 @@ namespace Scripts
         {
             if (!_isOnline)
             {
-                // Start opening lid
+                // Start opening the lid
                 if (!isOpen)
                 {
                     _isGrabbed.Value = true;
@@ -155,7 +158,7 @@ namespace Scripts
                     arrowsUI.SetActive(true);
                     AlignBodyToHandlerRotation();
                 }
-                // Close lid
+                // Close the lid
                 else if (DetachBallFromHand())
                 {
                     _isOpen.Value = false;
@@ -263,8 +266,8 @@ namespace Scripts
 
         private void AlignBodyToHandlerRotation()
         {
-            Vector3 euler = body.rotation.eulerAngles;
-            euler.y = handler.rotation.eulerAngles.y;
+            Vector3 euler = body.localRotation.eulerAngles;
+            euler.y = handler.localRotation.eulerAngles.y;
             body.rotation = Quaternion.Euler(euler);
         }
 
@@ -285,7 +288,7 @@ namespace Scripts
         [Rpc(SendTo.Owner)]
         private void GrabLogicRPC()
         {   
-            // Start opening lid
+            // Start opening the lid
             if (!isOpen)
             {
                 _isGrabbed.Value = true;
@@ -293,7 +296,7 @@ namespace Scripts
             
                 StartOpeningLidRPC();
             }
-            // Close lid
+            // Close the lid
             else if (DetachBallFromHand())
             {
                 _isOpen.Value = false;

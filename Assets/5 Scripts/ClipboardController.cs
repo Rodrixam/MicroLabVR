@@ -67,6 +67,20 @@ namespace Scripts
 
             mainTextUGUI.text = new string(text);
         }
+        
+        private void UpdateCheckBox(int[] index, bool state)
+        {
+            var text = mainTextUGUI.text.ToCharArray();
+
+            foreach (int i in index)
+            {
+                var pos = _checkBoxPlaces[i];
+                text[pos] = state ? CCheck : CBox;
+            }
+
+            mainTextUGUI.text = new string(text);
+        }
+
 
         // ARRAY METHODS
 
@@ -117,6 +131,20 @@ namespace Scripts
             }
             
             Debug.Log(str);
+        }
+        
+        // MISC
+        
+        public void RestoreToStartConditions()
+        {
+            // Set all checkboxes to false
+            UpdateCheckBox(_checkBoxPlaces, false);
+            
+            // Set all checkbox states to false
+            for (int i = 0; i <_checkBoxStates.Length; i++)
+            {
+                _checkBoxStates[i] = false;
+            }
         }
     }
 }

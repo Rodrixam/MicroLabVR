@@ -461,10 +461,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: " \u2610 Dividir Placas Petri en 3 zonas usando el l\xE1piz.\n\n \u2610
-    Hacer cultivo de control.\n\n \u2610 Calentar los tubos durante 1 minuto y hacer
-    cultivo.\n\n \u2610 Calentar los tubos durante 5 minutos y hacer cultivo.\n\n
-    \u2610 Calentar los tubos durante 10 minutos y hacer cultivo.\n\n \u2610 Incubar
-    por 24 horas a 37\xB0C.\n \n\u221A"
+    Hacer cultivo de control (siembra).\n\n \u2610 Calentar los tubos durante 1 minuto
+    y sembrar.\n\n \u2610 Calentar los tubos durante 5 minutos y sembrar.\n\n \u2610
+    Calentar los tubos durante 10 minutos y sembrar.\n\n \u2610 Incubar por 24 horas
+    a 37\xB0C.\n \n\u221A"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1009,7 +1009,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3070529837
+  GlobalObjectIdHash: 3393281491
   InScenePlacedSourceGlobalObjectIdHash: 3393281491
   DeferredDespawnTick: 0
   Ownership: 3

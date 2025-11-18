@@ -6,8 +6,7 @@ namespace Scripts
 {
     public class ModuleController : NetworkBehaviour
     {
-        [SerializeField] private GameObject toolsPrefab;
-        [SerializeField] private Transform toolsInstantiated;
+        [SerializeField] private ClipboardController clipboard;
 
         private bool _isOnline;
         
@@ -31,8 +30,7 @@ namespace Scripts
         {
             if (!_isOnline)
             {
-                Destroy(toolsInstantiated.gameObject);
-                toolsInstantiated = Instantiate(toolsPrefab, transform).transform;   
+                clipboard.RestoreToStartConditions();
             }
             else
             {
@@ -43,8 +41,7 @@ namespace Scripts
         [Rpc(SendTo.ClientsAndHost)]
         private void RestoreToolsRPC()
         {
-            Destroy(toolsInstantiated.gameObject);
-            toolsInstantiated = Instantiate(toolsPrefab, transform).transform;
+            clipboard.RestoreToStartConditions();
         }
     }
 }
