@@ -99,6 +99,7 @@ GameObject:
   - component: {fileID: 798529454401969972}
   - component: {fileID: 1750968779683979864}
   - component: {fileID: 5906181941853496666}
+  - component: {fileID: 8411611277163479832}
   m_Layer: 0
   m_Name: Socket
   m_TagString: Untagged
@@ -204,7 +205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2131688351
+  GlobalObjectIdHash: 2039691877
   InScenePlacedSourceGlobalObjectIdHash: 230827695
   DeferredDespawnTick: 0
   Ownership: 1
@@ -251,6 +252,21 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.05
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8411611277163479832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6190309575056581941}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 751744705525a6344b41228d62f1790d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  socket: {fileID: 1178255101938369590}
+  item: {fileID: 0}
 --- !u!1 &8324419053124182168
 GameObject:
   m_ObjectHideFlags: 0
@@ -261,12 +277,12 @@ GameObject:
   m_Component:
   - component: {fileID: 8961425339646185958}
   - component: {fileID: 2536728142245298448}
-  - component: {fileID: 3857427694869456379}
   - component: {fileID: 748022426577391154}
-  - component: {fileID: 8927481931825149566}
-  - component: {fileID: 7157189917277911625}
   - component: {fileID: 7795235142726890226}
   - component: {fileID: 1884391952533183673}
+  - component: {fileID: 3857427694869456379}
+  - component: {fileID: 8927481931825149566}
+  - component: {fileID: 7157189917277911625}
   m_Layer: 8
   m_Name: BigPetri
   m_TagString: Untagged
@@ -319,6 +335,78 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &748022426577391154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8324419053124182168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 230827695
+  InScenePlacedSourceGlobalObjectIdHash: 230827695
+  DeferredDespawnTick: 0
+  Ownership: 3
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 1
+  AutoObjectParentSync: 0
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 1
+--- !u!114 &7795235142726890226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8324419053124182168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 961b04485a63e0142b2c29a1e9d722c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  grabInteractable: {fileID: 3857427694869456379}
+  colliders:
+  - {fileID: 4478924411576303584}
+  socket: {fileID: 1178255101938369590}
+  petriController: {fileID: 0}
+--- !u!114 &1884391952533183673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8324419053124182168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcf814bb5a4a2714da5c89c2bf8b154a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  reporters:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  divisionLines: {fileID: 0}
+  interactivePoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lineRenderers:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  particles: {fileID: 0}
 --- !u!114 &3857427694869456379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -367,46 +455,10 @@ MonoBehaviour:
       m_Calls: []
   m_SelectEntered:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1884391952533183673}
-        m_TargetAssemblyTypeName: Scripts.PetriLineTask, Assembly-CSharp
-        m_MethodName: Grab
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   m_SelectExited:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 7795235142726890226}
-        m_TargetAssemblyTypeName: LidPetriController, Assembly-CSharp
-        m_MethodName: Drop
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 1884391952533183673}
-        m_TargetAssemblyTypeName: Scripts.PetriLineTask, Assembly-CSharp
-        m_MethodName: Drop
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   m_FirstFocusEntered:
     m_PersistentCalls:
       m_Calls: []
@@ -478,31 +530,6 @@ MonoBehaviour:
   m_StartingMultipleGrabTransformers: []
   m_AddDefaultGrabTransformers: 1
   m_FarAttachMode: 0
---- !u!114 &748022426577391154
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8324419053124182168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 230827695
-  InScenePlacedSourceGlobalObjectIdHash: 230827695
-  DeferredDespawnTick: 0
-  Ownership: 3
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 1
-  AutoObjectParentSync: 0
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 1
 --- !u!114 &8927481931825149566
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -567,53 +594,6 @@ MonoBehaviour:
   UseRigidBodyForMotion: 0
   AutoUpdateKinematicState: 0
   AutoSetKinematicOnDespawn: 0
---- !u!114 &7795235142726890226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8324419053124182168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 961b04485a63e0142b2c29a1e9d722c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  grabInteractable: {fileID: 3857427694869456379}
-  colliders:
-  - {fileID: 4478924411576303584}
-  socket: {fileID: 1178255101938369590}
-  petriController: {fileID: 0}
---- !u!114 &1884391952533183673
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8324419053124182168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bcf814bb5a4a2714da5c89c2bf8b154a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  reporters:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  divisionLines: {fileID: 0}
-  interactivePoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  lineRenderers:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  particles: {fileID: 0}
 --- !u!1 &8581713615097244563
 GameObject:
   m_ObjectHideFlags: 0

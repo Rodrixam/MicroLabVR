@@ -98,30 +98,29 @@ namespace Scripts
                     lineTask.enabled = false;
                     seedTask.enabled = true;
                 
-                    lidPetri.SetDetachable(true);
+                    lidPetri.SetDetachableStateSynced(true);
                 
                     if (lidPetri.isGrabbed)
                     {
-                        if (!_isOnline)
-                        {
-                            SetCollidersState(true);
-                            lidPetri.SetCollidersState(false);
-                        }
-                        else
-                        {
-                            SetLidPetriCollidersStateRPC(true);
-                            SetCollidersStateRPC(false);
-                        }
+                        SetCollidersStateSynced(true);
+                        lidPetri.SetCollidersStateSynced(false);
                     }
                     break;
             }
         }
     
-        public void SetCollidersState(bool state)
+        public void SetCollidersStateSynced(bool state)
         {
-            foreach(var col in colliders)
+            if (!_isOnline)
             {
-                col.enabled = state;
+                foreach(var col in colliders)
+                {
+                    col.enabled = state;
+                }
+            }
+            else
+            {
+                SetCollidersStateRPC(state);
             }
         }
 
@@ -129,6 +128,7 @@ namespace Scripts
         {
             lidPetri = lidController;
         }
+        
 
         public void RemoveAgar()
         {
@@ -164,12 +164,6 @@ namespace Scripts
             {
                 col.enabled = state;
             }
-        }
-    
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetLidPetriCollidersStateRPC(bool state)
-        {
-            lidPetri.SetCollidersState(state);
         }
     }
 }

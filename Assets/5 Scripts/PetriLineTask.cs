@@ -135,7 +135,6 @@ namespace Scripts
         public void Grab()
         {
             if (_allLinesDrawn.Value) return;
-            Debug.Log("[PETRI LINE TASK]: I'm grabbing");
 
             // ------------------------- LOCAL -------------------------
             if (!_isOnline)
