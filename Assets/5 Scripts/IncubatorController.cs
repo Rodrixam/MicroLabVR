@@ -60,8 +60,8 @@ namespace Scripts
             // Sockets
             foreach (var socket in sockets)
             {
-                socket.selectEntered.AddListener(ValidatePetri);
-                socket.selectExited.AddListener(RemovePetri);
+                socket.selectEntered.AddListener(ValidatePetriSynced);
+                socket.selectExited.AddListener(RemovePetriSynced);
             }
         
             // Audio
@@ -70,15 +70,16 @@ namespace Scripts
     
         void Update()
         {
+            if (_isOnline && !IsOwner) return;
+            
             if (Vector3.Distance(handler.position, grabbableHandler.position) > maxDistance)
             {
-                ForceRelease();
+                ForceReleaseSynced();
             }
         }
     
         // HANDLER METHODS
     
-        // TODO: CHECK IF NETWORK OBJECT IS SYNCING THE TRANSFORM
         public void GrabStart()
         {
             joint.useSpring = false;
@@ -87,45 +88,103 @@ namespace Scripts
         {
             joint.useSpring = true;
         
-            grabbableHandler.transform.position = handler.position;
-            grabbableHandler.transform.rotation = handler.rotation;
+            grabbableHandler.transform.localPosition = Vector3.zero;
+            grabbableHandler.transform.localRotation = Quaternion.identity;
 
             Rigidbody rbHandler = handler.GetComponent<Rigidbody>();
             rbHandler.linearVelocity = Vector3.zero;
             rbHandler.angularVelocity = Vector3.zero;
         }
     
-        private void ForceRelease()
+        private void ForceReleaseSynced()
         {
-            // Loop through all interactors currently holding this object
-            foreach (var interactor in _interactable.interactorsSelecting)
+            if(!_isOnline)
             {
-                _interactable.interactionManager.SelectExit(interactor, _interactable);
+                // Loop through all interactors currently holding this object
+                var interactors = new List<IXRSelectInteractor>(_interactable.interactorsSelecting.ToArray());
+                foreach (var interactor in interactors)
+                {
+                    _interactable.interactionManager.SelectExit(interactor, _interactable);
+                }   
+            }
+            else
+            {
+                ForceReleaseRPC();
             }
         }
-    
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ForceReleaseRPC()
+        {
+            // Loop through all interactors currently holding this object
+            var interactors = new List<IXRSelectInteractor>(_interactable.interactorsSelecting.ToArray());
+            foreach (var interactor in interactors)
+            {
+                _interactable.interactionManager.SelectExit(interactor, _interactable);
+            }   
+        }
+        
         // SOCKET METHODS
-        // TODO: CHECK IF SOCKET EVENTS ARE SYNCING
-        private void ValidatePetri(SelectEnterEventArgs args)
+        
+        private void ValidatePetriSynced(SelectEnterEventArgs args)
         {
             var lid = args.interactableObject.transform.GetComponent<LidPetriController>();
             if (lid is null || !lid.PetriController.SeedTask.IsCompleted()) return;
-        
-            _validPetri.Add(lid);
-            visualText.text = $"{_validPetri.Count}/4";
+
+            if (!_isOnline)
+            {
+                _validPetri.Add(lid);
+                visualText.text = $"{_validPetri.Count}/4";
             
-            if (_validPetri.Count >= 4) { _completed = true; }
+                if (_validPetri.Count >= 4) { _completed = true; }   
+            }
+            else
+            {
+                NetworkObjectReference lidRef = lid.GetComponent<NetworkObject>();
+                ValidatePetriRPC(lidRef);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ValidatePetriRPC(NetworkObjectReference lidReference)
+        {
+            if (lidReference.TryGet(out NetworkObject networkObject))
+            {
+                var lid = networkObject.GetComponent<LidPetriController>();
+                _validPetri.Add(lid);
+                visualText.text = $"{_validPetri.Count}/4";
+            
+                if (_validPetri.Count >= 4) { _completed = true; }   
+            }
         }
 
-        private void RemovePetri(SelectExitEventArgs args)
+        private void RemovePetriSynced(SelectExitEventArgs args)
         {
             var lid = args.interactableObject.transform.GetComponent<LidPetriController>();
             if (lid is null) return;
+
+            if (!_isOnline)
+            {
+                _validPetri.Remove(lid);
+                visualText.text = $"{_validPetri.Count}/4";
         
-            _validPetri.Remove(lid);
-            visualText.text = $"{_validPetri.Count}/4";
+                if (_validPetri.Count < 4) { _completed = false; }   
+            }
+            else
+            {
+                NetworkObjectReference lidRef = lid.GetComponent<NetworkObject>();
+                RemovePetriRPC(lidRef);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void RemovePetriRPC(NetworkObjectReference lidReference)
+        {
+            if (lidReference.TryGet(out NetworkObject networkObject))
+            {
+                var lid = networkObject.GetComponent<LidPetriController>();
+                _validPetri.Remove(lid);
+                visualText.text = $"{_validPetri.Count}/4";
         
-            if (_validPetri.Count < 4) { _completed = false; }
+                if (_validPetri.Count < 4) { _completed = false; }   
+            }
         }
 
         // INTERACTION METHODS
@@ -159,10 +218,10 @@ namespace Scripts
                 lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.EColi, eColiSprites[eColiInterval], Color.white);
             
                 int sAureusInterval = lid.PetriController.SeedTask.sAureusInterval;
-                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.SAureus, eColiSprites[sAureusInterval], Color.white);
+                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.SAureus, sAureusSprites[sAureusInterval], Color.white);
             
                 int sporesInterval = lid.PetriController.SeedTask.sporesInterval;
-                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.Spores, eColiSprites[sporesInterval], Color.white);
+                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.Spores, sporesSprites[sporesInterval], Color.white);
             }
         
             _audioSource.clip = correctBell;
@@ -174,11 +233,43 @@ namespace Scripts
         {
             CookThem();
         }
+        
+        // ------------------- RESTORATION -------------------
 
         public void RestoreToStartConditions()
         {
-            _completed = false;
+            ForceReleaseSynced();
+            
+            //Components and References
+            if (!_isOnline)
+            {
+                ResetComponents();
+            }
+            else
+            {
+                ResetNetworkComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetNetworkComponentsRPC()
+        {
+            ResetComponents();
+        }
+        private void ResetComponents()
+        {
             _validPetri.Clear();
+            visualText.text = $"{_validPetri.Count}/4";
+            _completed = false;
+            
+            // detach from sockets
+            foreach(var socket in sockets)
+            {
+                var gi = socket.GetOldestInteractableSelected();
+                if (gi != null)
+                {
+                    socket.interactionManager.CancelInteractableSelection(gi);
+                }   
+            }
         }
     }
 }

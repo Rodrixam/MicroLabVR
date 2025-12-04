@@ -16,12 +16,25 @@ namespace Scripts
         public bool releasingGas => _releasingGas.Value;
 
         [SerializeField] private float duration;
+        [SerializeField] private AudioSource gasAudioSource;
 
         private bool _isOnline;
-
+        
+        // Initial state references
+        private Vector3 _initialPosition;
+        private Quaternion _initialRotation;
+        private Vector3 _initialScale;
+        
     
         // NETWORK METHODS
-    
+
+        private void Start()
+        {
+            _initialPosition = transform.position;
+            _initialRotation = transform.rotation;
+            _initialScale = transform.localScale;
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -50,6 +63,37 @@ namespace Scripts
             else
             {
                 RequestGrabServerRPC(!_open.Value);
+            }
+        }
+
+        public void SetGasSoundStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                if (state)
+                {
+                    gasAudioSource.Play();
+                }
+                else
+                {
+                    gasAudioSource.Stop();
+                }
+            }
+            else
+            {
+                
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetGasSoundStateRPC(bool state)
+        {
+            if (state)
+            {
+                gasAudioSource.Play();
+            }
+            else
+            {
+                gasAudioSource.Stop();
             }
         }
     
@@ -81,14 +125,15 @@ namespace Scripts
             StartCoroutine(RotateCoroutine(current));
         }
     
-        private IEnumerator RotateCoroutine(bool newValue)
+        private IEnumerator RotateCoroutine(bool newReleasingGas)
         {
             Quaternion startRot = transform.rotation;
-            Quaternion endRot = newValue ? Quaternion.Euler(0, 0, 0) : Quaternion.Euler(0, -90, 0);
+            Quaternion endRot = newReleasingGas ? Quaternion.Euler(0, 0, 0) : Quaternion.Euler(0, -90, 0);
 
-            if (!_isOnline || (_isOnline && IsOwner && newValue))
+            if (newReleasingGas && (!_isOnline || (_isOnline && IsOwner)))
             {
-                _releasingGas.Value = newValue;
+                _releasingGas.Value = true;
+                gasAudioSource.Play();
             }
 
             float elapsed = 0f;
@@ -104,11 +149,77 @@ namespace Scripts
         
             if (!_isOnline || (_isOnline && IsOwner))
             {
-                _releasingGas.Value = newValue;
+                _releasingGas.Value = newReleasingGas;
+            }
+
+            if (!newReleasingGas)
+            {
+                gasAudioSource.Stop();
             }
 
             // Snap to final rotation (avoids precision drift)
             transform.rotation = endRot;
+        }
+        
+        // OTHERS
+        
+        public void RestoreToStartConditionsSynced()
+        {
+            // Controller Variables
+            ResetVariablesAndCoroutinesSynced();
+            // Transform
+            SetInitialTransformSynced();
+        }
+        private void SetInitialTransformSynced()
+        {
+            if (!_isOnline)
+            {
+                // Transform
+                transform.position = _initialPosition;
+                transform.rotation = _initialRotation;
+                transform.localScale = _initialScale;
+            }
+            else
+            {
+                SetInitialTransformRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void SetInitialTransformRPC()
+        {
+            // Transform
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+            transform.localScale = _initialScale;
+        }
+        
+        // Network Variables
+        private void ResetVariablesAndCoroutinesSynced()
+        {
+            if (!_isOnline)
+            {
+                _open.Value = false;
+                _releasingGas.Value = false;
+                gasAudioSource.Stop();
+                StopAllCoroutines();
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+                StopAllCoroutinesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _open.Value = false;
+            _releasingGas.Value = false;
+            gasAudioSource.Stop();
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StopAllCoroutinesRPC()
+        {
+            StopAllCoroutines();
         }
     }
 }

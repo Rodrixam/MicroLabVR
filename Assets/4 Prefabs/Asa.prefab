@@ -81,12 +81,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  interactable: {fileID: 1418619017015128137}
   pointRenderer: {fileID: 2343044582507870157}
   sampleRenderer: {fileID: 4871796076878674642}
   warningUI: {fileID: 1148290078775088853}
   victoryParticles: {fileID: 6674085536468378688}
   microbesParticles: {fileID: 9067067562257357646}
-  timeToGlow: 7
+  timeToGlow: 5
   alignMargin: 15
 --- !u!54 &8401804224904124647
 Rigidbody:
@@ -10524,7 +10525,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
+  m_ReceiveGI: 2
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -10610,7 +10611,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
+  m_ReceiveGI: 2
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0

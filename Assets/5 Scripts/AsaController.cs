@@ -1,5 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
@@ -7,6 +9,7 @@ namespace Scripts
     public class AsaController : NetworkBehaviour
     {
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+        [SerializeField] private XRGrabInteractable interactable;
         
         [Header("Renderers & UI")]
         [SerializeField] private MeshRenderer pointRenderer;
@@ -31,6 +34,11 @@ namespace Scripts
         private int _sampleInterval;
         public int sampleInterval => _sampleInterval;
         
+        // Initial state references
+        private Vector3 _initialPosition;
+        private Quaternion _initialRotation;
+        private Vector3 _initialScale;
+        
         private bool _isOnline;
         
         // Network Variables
@@ -46,24 +54,39 @@ namespace Scripts
             _isOnline = true;
             
             _timeCounter.OnValueChanged += ChangeColor;
+            _isSterilized.OnValueChanged += UpdateWarningUI;
         }
         public override void OnNetworkDespawn()
         {
-            base.OnNetworkDespawn();
             _isOnline = false;
             
             _timeCounter.OnValueChanged -= ChangeColor;
+            _isSterilized.OnValueChanged -= UpdateWarningUI;
+            base.OnNetworkDespawn();
         }
-        
+
+        private void Awake()
+        {
+            interactable.selectEntered.AddListener(Grab);
+        }
+        public override void OnDestroy()
+        {
+            interactable.selectEntered.RemoveListener(Grab);
+            base.OnDestroy();
+        }
+
         private void Start()
         {
+            _initialPosition = transform.position;
+            _initialRotation = transform.rotation;
+            _initialScale = transform.localScale;
+            
             // Set point emission color to zero
             _pointMaterial = pointRenderer.material;
             _pointMaterial.SetColor(EmissionColor, Color.red * 0);
             
             // Deactivate feedback elements
             sampleRenderer.enabled = false;
-            warningUI.SetActive(false);
         }
 
         private void Update()
@@ -72,36 +95,15 @@ namespace Scripts
             if (_isOnline && !IsOwner) return;
             
             // Heating
-            if (_flameController is not null && IsTiltedCorrectly() && _timeCounter.Value < timeToGlow)
+            if (_flameController is not null && IsTiltedCorrectly() && _timeCounter.Value < timeToGlow + 2)
             {
                 _timeCounter.Value += Time.deltaTime;
                 
                 // Sterilization time reached
                 if (!_isSterilized.Value && _timeCounter.Value >= timeToGlow)
                 {
-                    // Set sterilization as true
-                    _isSterilized.Value = true;
-                    
-                    // Feedback
-                    if (!_isOnline)
-                    {
-                        warningUI.SetActive(false);
-                        
-                        // Clean sample
-                        sampleRenderer.enabled = false;
-                        _sample = TubePickSampleTask.Samples.None;
-                        
-                        // Feedback particles
-                        victoryParticles.Play();
-                    }
-                    else
-                    {
-                        SterilizationRPC();
-                    }
+                    SterilizationSynced();
                 }
-
-                // Set color according to temperature
-                ChangeColor(0,_timeCounter.Value);
             }
             // Cooling
             else if(_timeCounter.Value > 0)
@@ -112,7 +114,10 @@ namespace Scripts
                 {
                     _timeCounter.Value = 0;
                 }
-                    
+            }
+
+            if (!_isOnline)
+            {
                 // Set color according to temperature
                 ChangeColor(0,_timeCounter.Value);
             }
@@ -126,21 +131,42 @@ namespace Scripts
             return gap <= alignMargin;
         }
 
+        // Already online synchronized by _timeCounter.OnValueChanged 
         private void ChangeColor(float previous, float current)
         {
-            // Already online synchronized by _timeCounter.OnValueChanged 
-            var normProgress = current / timeToGlow;
+            var normProgress = current / 7f;
             _pointMaterial.SetColor(EmissionColor, Color.red * normProgress);
         }
         
-        [ServerRpc(RequireOwnership = false)]
-        private void RequestGrabServerRPC(ServerRpcParams rpcParams = default)
-        {   
-            // Change ownership
-            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
-            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+        // Already online synchronized by _sterilized.OnValueChanged
+        private void UpdateWarningUI(bool previous, bool current)
+        {
+            warningUI.SetActive(current);
         }
 
+
+        private void SterilizationSynced()
+        {
+            // Set sterilization as true
+            _isSterilized.Value = true;
+            
+            // Feedback
+            if (!_isOnline)
+            {
+                warningUI.SetActive(false);
+                        
+                // Clean sample
+                sampleRenderer.enabled = false;
+                _sample = TubePickSampleTask.Samples.None;
+                        
+                // Feedback particles
+                victoryParticles.Play();
+            }
+            else
+            {
+                SterilizationRPC();
+            }
+        }
         [Rpc(SendTo.ClientsAndHost)]
         private void SterilizationRPC()
         {
@@ -156,60 +182,87 @@ namespace Scripts
         
         // PUBLIC METHODS
         
+        // already synced in TubePickSampleTask
         public bool AttachMicrobe(TubePickSampleTask.Samples newSample, int interval, Material sampleMat)
         {
             // Skip if sample reference is already set
             if (_sample != TubePickSampleTask.Samples.None) return false;
-            
+
             // Set sample and time interval
             _sample = newSample;
             _sampleInterval = interval;
                 
             // Enable sample renderer
             sampleRenderer.material  = sampleMat;
-            sampleRenderer.enabled = true;
+            sampleRenderer.enabled = true;   
                 
             // Set sterilization as false
-            _isSterilized.Value = false;
-            warningUI.SetActive(true);
-            StopMicrobeParticlesRPC();
+            if (!_isOnline)
+            {
+                _isSterilized.Value = false;
+                warningUI.SetActive(true);
+            }
+            else
+            {
+                SetSterilizationStateRPC(false);
+            }
+                
+            // Turn off tracking particles
+            SetMicrobeParticlesState(false);
                 
             return true;
         }
+        public void SetMicrobeParticlesState(bool state)
+        {
+            if (state)
+            {
+                microbesParticles.Play();   
+            }
+            else
+            {
+                microbesParticles.Stop();
+            }
+        }
         
+        // Microbe (sample) Renderer
         [Rpc(SendTo.ClientsAndHost)]
         public void SetMicrobeParticlesColorRPC(Color color)
         {
             var main = microbesParticles.main;
             main.startColor = new ParticleSystem.MinMaxGradient(color);
         }
-        
-        [Rpc(SendTo.ClientsAndHost)]
-        public void StartMicrobeParticlesRPC()
+
+        [Rpc(SendTo.Owner)]
+        private void SetSterilizationStateRPC(bool state)
         {
-            microbesParticles.Play();
+            _isSterilized.Value = state;
         }
         
-        [Rpc(SendTo.ClientsAndHost)]
-        public void StopMicrobeParticlesRPC()
-        {
-            microbesParticles.Stop();
-        }
+        // INTERACTION METHODS
         
-        public void Grab()
+        private void Grab(SelectEnterEventArgs args)
         {
+            if (!IsPickedByHand(args)) return;
+            
             RequestGrabServerRPC();
-
-            if (!isSterilized)
-            {
-                warningUI.SetActive(true);
-            }
         }
-
-        public void Drop()
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestGrabServerRPC(ServerRpcParams rpcParams = default)
+        {   
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+        }
+        private bool IsPickedByHand(SelectEnterEventArgs args)
         {
-            warningUI.SetActive(false);
+            if (args.interactorObject.transform.CompareTag("LeftHand") ||
+                args.interactorObject.transform.CompareTag("RightHand"))
+            {
+                return true;
+            }
+            return false;
         }
+
         
         // COLLISION METHODS
         
@@ -226,6 +279,122 @@ namespace Scripts
             {
                 _flameController = null;
             }
+        }
+        
+        
+        // ------------------- RESTORATION -------------------
+        
+        public void RestoreToStartConditions()
+        {
+            // Physics
+            StopRigidBodySynced();
+            
+            // Transform
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+            transform.localScale = _initialScale;
+            
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            
+            //Components and References
+            ResetNetworkComponentsSynced();
+        }
+
+        
+        // Physics
+        private void StopRigidBodySynced()
+        {
+            if (!_isOnline)
+            {
+                var rBody = GetComponent<Rigidbody>();
+                if (rBody is not null)
+                {
+                    rBody.linearVelocity = Vector3.zero;
+                    rBody.angularVelocity = Vector3.zero;
+                }
+            }
+            else
+            {
+                StopRigidBodyRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StopRigidBodyRPC()
+        {
+            var rBody = GetComponent<Rigidbody>();
+            if (rBody is not null)
+            {
+                rBody.linearVelocity = Vector3.zero;
+                rBody.angularVelocity = Vector3.zero;
+            }
+        }
+
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _timeCounter.Value = 0;
+                _isSterilized.Value = false;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _timeCounter.Value = 0;
+            _isSterilized.Value = false;
+        }
+        
+        
+        // Components and stuff
+        private void ResetNetworkComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                // Set point emission color to zero
+                _pointMaterial.SetColor(EmissionColor, Color.red * 0);
+            
+                // Deactivate feedback elements
+                sampleRenderer.enabled = false;
+                warningUI.SetActive(true);
+                
+                // Stop Particles
+                victoryParticles.Stop();
+                microbesParticles.Stop();
+                
+                // Reset references
+                _flameController = null;
+                _sample = TubePickSampleTask.Samples.None;
+                _sampleInterval = 0;
+            }
+            else
+            {
+                ResetNetworkComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetNetworkComponentsRPC()
+        {
+            // Set point emission color to zero
+            _pointMaterial.SetColor(EmissionColor, Color.red * 0);
+            
+            // Deactivate feedback elements
+            sampleRenderer.enabled = false;
+            warningUI.SetActive(true);
+                
+            // Stop Particles
+            victoryParticles.Stop();
+            microbesParticles.Stop();
+                
+            // Reset references
+            _flameController = null;
+            _sample = TubePickSampleTask.Samples.None;
+            _sampleInterval = 0;
         }
     }
 }

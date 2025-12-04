@@ -29,9 +29,10 @@ public class SimplePen : NetworkBehaviour
         XRINetworkGameManager.Connected.Subscribe(ConnectedToNetworkGame);
     }
 
-    void OnDestroy()
+    public override void OnDestroy()
     {
         XRINetworkGameManager.Connected.Unsubscribe(ConnectedToNetworkGame);
+        base.OnDestroy();
     }
 
     void ConnectedToNetworkGame(bool connected)

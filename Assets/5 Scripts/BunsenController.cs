@@ -11,11 +11,13 @@ namespace Scripts
         [SerializeField] private ValveController valve;
         [SerializeField] private GameObject fire;
         [SerializeField] private XRSocketInteractor tripodSocket;
+        [SerializeField] private AudioSource fireAudioSource;
         
         private TripodController _tripod;
         private LighterController _lighter;
 
-        private readonly NetworkVariable<bool> _onFire = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<bool> _onFire = 
+            new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         public bool onFire => _onFire.Value;
 
         private bool _isOnline;
@@ -25,11 +27,13 @@ namespace Scripts
         private void Awake()
         {
             tripodSocket.selectEntered.AddListener(OnTripodPlaced);
+            tripodSocket.selectExited.AddListener(OnTripodRemoved);
         }
         public override void OnDestroy()
         {
-            base.OnDestroy();
+            tripodSocket.selectEntered.RemoveListener(OnTripodPlaced);
             tripodSocket.selectExited.RemoveListener(OnTripodRemoved);
+            base.OnDestroy();
         }
 
         public override void OnNetworkSpawn()
@@ -43,35 +47,18 @@ namespace Scripts
             _isOnline = false;
         }
 
-        private void Start()
-        {
-            fire.SetActive(false);
-        }
-
         void Update()
         {
             // Only owner updates
             if (_isOnline && !IsOwner) return;
             
             // Turn on flame
-            if (!_onFire.Value && valve.releasingGas && _lighter is not null && _lighter.IsActive())
+            if (!_onFire.Value && valve.releasingGas && _lighter is not null && _lighter.lightOn)
             {
                 _onFire.Value = true;
                 
                 // Feedback
-                if (!_isOnline)
-                {
-                    fire.SetActive(true);
-                
-                    if (_tripod is not null && !_tripod.onFire)
-                    {
-                        _tripod.SetOnFire(true);
-                    }   
-                }
-                else
-                {
-                    SetFireRPC(true);
-                }
+                SetFireStateSynced(true);
             }
 
             // Turn off flame
@@ -79,19 +66,8 @@ namespace Scripts
             {
                 _onFire.Value = false;
                 
-                if (!_isOnline)
-                {
-                    fire.SetActive(false);
-                
-                    if (_tripod is not null && _tripod.onFire)
-                    {
-                        _tripod.SetOnFire(false);
-                    }
-                }
-                else
-                {
-                    SetFireRPC(false);    
-                }
+                // Feedback
+                SetFireStateSynced(false);
             }
         }
         
@@ -115,30 +91,121 @@ namespace Scripts
         
         private void OnTripodPlaced(SelectEnterEventArgs args)
         {
+            // save tripod reference
             _tripod = args.interactableObject.transform.GetComponent<TripodController>();
             
+            // skip if not owner
+            if (_isOnline && !IsOwner) return;
             if (_onFire.Value)
             {
-                _tripod.SetOnFire(true);
+                _tripod.SetOnFireSynced(true);
             }
         }
         private void OnTripodRemoved(SelectExitEventArgs args)
         {
-            _tripod.SetOnFire(false);
+            _tripod.SetOnFireSynced(false);
             _tripod = null;
         }
         
         // RPC METHODS
-        
+
+        private void SetFireStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                fire.SetActive(state);
+                fireAudioSource.Play();
+                valve.SetGasSoundStateSynced(false);
+                
+                if (_tripod is not null && _tripod.onFire != state)
+                {
+                    _tripod.SetOnFireSynced(state);
+                }   
+            }
+            else
+            {
+                SetFireRPC(state);
+            }
+        }
         [Rpc(SendTo.ClientsAndHost)]
         private void SetFireRPC(bool state)
         {
             fire.SetActive(state);
+            fireAudioSource.Play();
+            valve.SetGasSoundStateSynced(false);
             
             if (_tripod is not null && _tripod.onFire != state)
             {
-                _tripod.SetOnFire(state);
+                _tripod.SetOnFireSynced(state);
             }   
+        }
+        
+        // OTHERS
+        
+        public void RestoreToStartConditionsSynced()
+        {
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            // Components
+            ResetComponentsSynced();
+            
+            valve.RestoreToStartConditionsSynced();
+        }
+        
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _onFire.Value = false;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _onFire.Value = false;
+        }
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                // fire
+                fire.SetActive(false);
+                // socket
+                var gi = tripodSocket.GetOldestInteractableSelected();
+                if (gi != null)
+                {
+                    tripodSocket.interactionManager.CancelInteractableSelection(gi);
+                }
+                // references
+                _lighter = null;
+                _tripod = null;
+            }
+            else
+            {
+                ResetComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetComponentsRPC()
+        {
+            // fire
+            fire.SetActive(false);
+            // socket
+            var gi = tripodSocket.GetOldestInteractableSelected();
+            if (gi != null)
+            {
+                tripodSocket.interactionManager.CancelInteractableSelection(gi);
+            }
+            // references
+            _lighter = null;
+            _tripod = null;
         }
     }
 }

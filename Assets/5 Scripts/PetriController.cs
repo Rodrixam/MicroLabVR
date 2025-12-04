@@ -1,114 +1,198 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using XRMultiplayer;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable once CheckNamespace
 namespace Scripts
 {
+    [RequireComponent(typeof(Rigidbody))]
     public class PetriController : NetworkBehaviour
     {
         // References
+        [SerializeField] private XRGrabInteractable grabInteractable;
+        [SerializeField] private ClientNetworkTransform networkTransform;
+        [SerializeField] private NetworkRigidbody networkRigidbody;
+        public XRGrabInteractable GrabInteractable => grabInteractable;
+
         [SerializeField] private MeshRenderer _petriRenderer;
+        private Material _agarMat;
         [SerializeField] private List<Collider> colliders;
         [SerializeField] private LidPetriController lidPetri;
+        private LidPetriController originalLid;
 
         [SerializeField] private PetriLineTask lineTask;
         [SerializeField] private SeedMicrobesTask seedTask;
-    
+
+        private readonly NetworkVariable<bool> _isGrabbed =
+            new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        public bool IsGrabbed => _isGrabbed.Value;
         public PetriLineTask LineTask => lineTask;
         public SeedMicrobesTask SeedTask => seedTask;
-    
-        // Network Variables
 
-        //private readonly NetworkVariable<bool> _isGrabbed =
-            //new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    
-        private readonly NetworkVariable<int> _activityIndex = 
-            new(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        public int activityIndex => _activityIndex.Value;
-    
-    
+        private Rigidbody rBody;
+
+        // Initial state references
+        private Vector3 _initialPosition;
+        private Quaternion _initialRotation;
+        private Vector3 _initialScale;
+        
         private bool _isOnline;
 
 
-        private void Start()
-        {
-            seedTask.enabled = false;
-        }
-
         // NETWORK METHODS
         
+        
+        private void Start()
+        {
+            rBody = GetComponent<Rigidbody>();
+            
+            _initialPosition = transform.position;
+            _initialRotation = transform.rotation;
+            _initialScale = transform.localScale;
+            
+            _agarMat = _petriRenderer.materials[1];
+            originalLid = lidPetri;
+            
+            grabInteractable.selectEntered.AddListener(Grab);
+            grabInteractable.selectExited.AddListener(Drop);
+        }
+
+        public override void OnDestroy()
+        {
+            grabInteractable.selectEntered.RemoveListener(Grab);
+            grabInteractable.selectExited.RemoveListener(Drop);
+            base.OnDestroy();
+        }
+
         public override void OnNetworkSpawn()
         {
-            base.OnNetworkSpawn();
             _isOnline = true;
+            base.OnNetworkSpawn();
         }
 
         public override void OnNetworkDespawn()
         {
-            base.OnNetworkDespawn();
             _isOnline = false;
+            base.OnNetworkDespawn();
         }
     
         // INTERACTION METHODS
-/*
-        public void Grab()
+
+        private void Grab(SelectEnterEventArgs args)
         {
-            // TODO: _isGrabbed obsolete?
-        
-            // ------------------------- LOCAL -------------------------
-            if (!_isOnline)
-            {
-                // Set grabbed true
-                _isGrabbed.Value = true;
-            }
-            // ------------------------- ONLINE -------------------------
-            else
-            {
-                // If online, it must request ownership first
-                RequestGrabServerRPC(true);
-            }
+            // Ignore if not picked by hand
+            if (!IsPickedByHand(args) || !_isOnline) return;
+            
+            // Claim Ownership
+            RequestOwnershipServerRPC();
+            // Change isGrabbed value
+            SetIsGrabbedRPC(true);
+            // Deactivate physics
+            SetPhysicsStateSynced(false);
+        }
+        [ServerRpc(RequireOwnership = false)]
+        public void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        {
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
         }
 
-        public void Drop()
-        {
-            if (!_isOnline || (_isOnline && IsOwner))
-            {
-                // Set grabbed false
-                _isGrabbed.Value = false;
-            }
-            else
-            {
-                Debug.LogError("Petri dropped by not owner... a fix for delay in ownership assignation might be needed");
-            }
-        }//*/
-    
-        // ACCESS METHODS
-
-        public void CompleteActivity()
+        private void Drop(SelectExitEventArgs args)
         {
             if (_isOnline && !IsOwner) return;
-        
-            _activityIndex.Value++;
+            
+            // Change isGrabbed value
+            SetIsGrabbedRPC(false);
+            // Activate physics
+            SetPhysicsStateSynced(true);
+        }
+        [Rpc(SendTo.Owner)]
+        private void SetIsGrabbedRPC(bool state)
+        {
+            _isGrabbed.Value = state;
+        }
 
-            switch (_activityIndex.Value)
+        public void SetNetworkComponentsStateSynced(bool state)
+        {
+            if (!_isOnline)
             {
-                case 1:
-                    lineTask.enabled = false;
-                    seedTask.enabled = true;
-                
-                    lidPetri.SetDetachableStateSynced(true);
-                
-                    if (lidPetri.isGrabbed)
-                    {
-                        SetCollidersStateSynced(true);
-                        lidPetri.SetCollidersStateSynced(false);
-                    }
-                    break;
+                networkTransform.enabled = state;
+                networkRigidbody.enabled = state;
+            }
+            else
+            {
+                SetNetworkComponentsStateRPC(state);
             }
         }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetNetworkComponentsStateRPC(bool state)
+        {
+            networkTransform.enabled = state;
+            networkRigidbody.enabled = state;
+        }
+        
+        public void SetPhysicsStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                rBody.isKinematic = !state;
+                rBody.useGravity = state;
+            }
+            else
+            {
+                SetPhysicsStateRPC(state);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetPhysicsStateRPC(bool state)
+        {
+            rBody.isKinematic = !state;
+            rBody.useGravity = state;
+        }
     
+        // ------------------- RPC METHODS -------------------
+
+        public void CompleteTaskSynced()
+        {
+            ActivateNextTaskSynced();
+            lidPetri.SetDetachableStateSynced(true);
+                
+            if (lidPetri.isGrabbed)
+            {
+                SetCollidersStateSynced(true);
+                lidPetri.SetCollidersStateSynced(false);
+            }
+        }
+
+        // Activate the seed task
+        private void ActivateNextTaskSynced()
+        {
+            if (!_isOnline)
+            {
+                lineTask.enabled = false;
+                seedTask.enabled = true;
+            }
+            else
+            {
+                ActivateNextTaskRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ActivateNextTaskRPC()
+        {
+            lineTask.enabled = false;
+            seedTask.enabled = true;
+        }
+    
+        // Change colliders state
         public void SetCollidersStateSynced(bool state)
         {
             if (!_isOnline)
@@ -123,40 +207,6 @@ namespace Scripts
                 SetCollidersStateRPC(state);
             }
         }
-
-        public void SetLidReference(LidPetriController lidController)
-        {
-            lidPetri = lidController;
-        }
-        
-
-        public void RemoveAgar()
-        {
-            List<Material> matList = new List<Material>(_petriRenderer.materials);
-            matList.RemoveAt(1); // index 1 = second material
-            _petriRenderer.materials = matList.ToArray();
-        }
-    
-        // RPC METHODS
-/*
-        [ServerRpc(RequireOwnership = false)]
-        private void RequestGrabServerRPC(bool value, ServerRpcParams rpcParams = default)
-        {
-            // Change ownership
-            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
-            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
-
-            // Change variables
-            //SetGrabbedClientRpc(value);
-        }
-
-        [Rpc(SendTo.Owner)]
-        private void SetGrabbedClientRpc(bool value)
-        {
-            // Change grab state
-            _isGrabbed.Value = value;
-        }//*/
-
         [Rpc(SendTo.ClientsAndHost)]
         private void SetCollidersStateRPC(bool state)
         {
@@ -164,6 +214,132 @@ namespace Scripts
             {
                 col.enabled = state;
             }
+        }
+        
+        // ------------------- OTHER -------------------
+
+        public void SetLidReference(LidPetriController lidController)
+        {
+            lidPetri = lidController;
+        }
+
+        public void RemoveAgar()
+        {
+            List<Material> matList = new List<Material>(_petriRenderer.materials);
+            matList.RemoveAt(1); // index 1 = second material
+            _petriRenderer.materials = matList.ToArray();
+        }
+        
+        
+        private bool IsPickedByHand(SelectEnterEventArgs args)
+        {
+            if (args.interactorObject.transform.CompareTag("LeftHand") ||
+                args.interactorObject.transform.CompareTag("RightHand"))
+            {
+                return true;
+            }
+            return false;
+        }
+        
+        
+        
+        // ------------------- RESTORATION -------------------
+        
+        
+        public void RestoreToStartConditions()
+        {
+            // Physics
+            SetCollidersStateSynced(false);
+            StopRigidBodySynced();
+            
+            // Transform
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+            transform.localScale = _initialScale;
+            
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            ResetComponentsSynced();
+            SetNetworkComponentsStateSynced(false);
+            lineTask.RestoreToStartConditions();
+            seedTask.RestoreToStartConditions();
+        }
+        
+        
+        // Physics
+        private void StopRigidBodySynced()
+        {
+            if (!_isOnline)
+            {
+                rBody.linearVelocity = Vector3.zero;
+                rBody.angularVelocity = Vector3.zero;
+            }
+            else
+            {
+                StopRigidBodyRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StopRigidBodyRPC()
+        {
+            rBody.linearVelocity = Vector3.zero;
+            rBody.angularVelocity = Vector3.zero;
+        }
+        
+        
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _isGrabbed.Value = false;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _isGrabbed.Value = false;
+        }
+        
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                // petriRenderer
+                if (!_petriRenderer.materials.Contains(_agarMat))
+                {
+                    List<Material> matList = new List<Material>(_petriRenderer.materials);
+                    matList.Insert(1, _agarMat);
+                    _petriRenderer.materials = matList.ToArray();
+                }
+                
+                // lid reference
+                lidPetri = originalLid;
+            }
+            else
+            {
+                ResetComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetComponentsRPC()
+        {
+            // petriRenderer
+            if (!_petriRenderer.materials.Contains(_agarMat))
+            {
+                List<Material> matList = new List<Material>(_petriRenderer.materials);
+                matList.Insert(1, _agarMat);
+                _petriRenderer.materials = matList.ToArray();
+            }
+            
+            // lid reference
+            lidPetri = originalLid;
         }
     }
 }

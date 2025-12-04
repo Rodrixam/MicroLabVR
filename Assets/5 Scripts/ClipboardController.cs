@@ -1,36 +1,59 @@
 using System.Collections.Generic;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 
 // ReSharper disable Unity.PerformanceCriticalCodeInvocation
 // ReSharper disable once CheckNamespace
 namespace Scripts
 {
-    public class ClipboardController : MonoBehaviour
+    public class ClipboardController : NetworkBehaviour
     {
         // Text references & variables
         [SerializeField] private int checkBoxNum;
         [SerializeField] private TextMeshProUGUI mainTextUGUI;
         
-        private const char CBox = '☐';
-        private const char CCheck = '√';
+        private const char CBox = '□';
+        private const char CCheck = '✔';
 
         private int[] _checkBoxPlaces;
-        
-        private readonly bool[] _checkBoxStates = new bool[6];
+        private readonly bool[] _checkBoxStates = {false, false, false, false, false, false};
         
         // Audio references
         [SerializeField] private AudioSource audioSource;
 
         // Collider references
         [SerializeField] private List<CollisionReporter> colliders;
+        
+        // Initial state references
+        private Vector3 _initialPosition;
+        private Quaternion _initialRotation;
+        private Vector3 _initialScale;
+
+        private bool _isOnline;
 
         private void Start()
         {
-            SetCheckBoxPositions();
+            _initialPosition = transform.position;
+            _initialRotation = transform.rotation;
+            _initialScale = transform.localScale;
+            
+            _checkBoxPlaces = ReadCheckBoxPlaces();
             SetColliderEvents();
         }
-        
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            _isOnline = false;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            base.OnNetworkDespawn();
+            _isOnline = false;
+        }
+
         // COLLISION METHODS
         
         private void SetColliderEvents()
@@ -40,55 +63,36 @@ namespace Scripts
                 var i1 = i;
                 colliders[i].OnTriggerEntered += (other) =>
                 {
-                    if (!other.CompareTag("PenTip")) return;
-
-                    _checkBoxStates[i1] = !_checkBoxStates[i1];
-                    UpdateCheckBox(i1);
-                    audioSource.Play();
-                    
-                    Debug.Log($"CheckBox {i1} marked as {_checkBoxStates[i1]}");
+                    if (!other.CompareTag("PenTip") || (_isOnline && !IsOwner)) return;
+                    ToggleCheckBoxSynced(i1);
                 };
             }
         }
 
-        private void UpdateCheckBox(int index)
+        private void ToggleCheckBoxSynced(int index)
         {
-            var text = mainTextUGUI.text.ToCharArray();
-            var pos = _checkBoxPlaces[index];
+            if (index > _checkBoxStates.Length - 1) return;
             
-            if (_checkBoxStates[index])
+            if (!_isOnline)
             {
-                text[pos] = CCheck;
+                _checkBoxStates[index] = !_checkBoxStates[index];  
+                UpdateCheckBox(index); 
+                audioSource.Play();
             }
             else
-            {   
-                text[pos] = CBox;
-            }
-
-            mainTextUGUI.text = new string(text);
-        }
-        
-        private void UpdateCheckBox(int[] index, bool state)
-        {
-            var text = mainTextUGUI.text.ToCharArray();
-
-            foreach (int i in index)
             {
-                var pos = _checkBoxPlaces[i];
-                text[pos] = state ? CCheck : CBox;
+                ToggleCheckBoxStateRPC(index);
             }
-
-            mainTextUGUI.text = new string(text);
         }
-
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ToggleCheckBoxStateRPC(int index)
+        {
+            _checkBoxStates[index] = !_checkBoxStates[index];   
+            UpdateCheckBox(index); 
+            audioSource.Play();
+        }
 
         // ARRAY METHODS
-
-        private void SetCheckBoxPositions()
-        {
-            _checkBoxPlaces = ReadCheckBoxPlaces();
-            PrintArray(_checkBoxPlaces);
-        }
 
         private int[] ReadCheckBoxPlaces()
         {
@@ -116,29 +120,86 @@ namespace Scripts
 
             return positions;
         }
-
-        private void PrintArray(int[] array)
+        
+        // Single position, toggles value
+        private void UpdateCheckBox(int index)
         {
-            string str = "";
-
-            for (int i = 0; i < array.Length; i++)
-            {
-                str += array[i].ToString();
-                if(i < array.Length - 1)
-                {
-                    str += " , ";
-                }
-            }
+            var text = mainTextUGUI.text.ToCharArray();
+            var pos = _checkBoxPlaces[index];
             
-            Debug.Log(str);
+            if (_checkBoxStates[index])
+            {
+                text[pos] = CCheck;
+            }
+            else
+            {   
+                text[pos] = CBox;
+            }
+
+            mainTextUGUI.text = new string(text);
+        }
+        // Whole array, sets to a single value
+        private void SetCheckBoxState(int[] index, bool state)
+        {
+            var text = mainTextUGUI.text.ToCharArray();
+
+            foreach (int pos in index)
+            {
+                text[pos] = state ? CCheck : CBox;
+            }
+
+            mainTextUGUI.text = new string(text);
         }
         
-        // MISC
-        
-        public void RestoreToStartConditions()
+        // INTERACTION METHODS
+
+        public void Grab()
         {
+            RequestOwnershipServerRPC();
+        }
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        {
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+        }
+        
+        //////////////////      RESTORATION     //////////////////
+        
+        public void RestoreToStartConditionsSynced()
+        {
+            if (!_isOnline)
+            {
+                RestoreToStartConditions();
+            }
+            else
+            {
+                RestoreToStartConditionsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void RestoreToStartConditionsRPC()
+        {
+            RestoreToStartConditions();
+        }
+        private void RestoreToStartConditions()
+        {
+            // Set transform to initial values
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+            transform.localScale = _initialScale;
+            
+            // Stop in physics
+            var rBody = GetComponent<Rigidbody>();
+            if (rBody is not null)
+            {
+                rBody.linearVelocity = Vector3.zero;
+                rBody.angularVelocity = Vector3.zero;
+            }
+            
             // Set all checkboxes to false
-            UpdateCheckBox(_checkBoxPlaces, false);
+            SetCheckBoxState(_checkBoxPlaces, false);
             
             // Set all checkbox states to false
             for (int i = 0; i <_checkBoxStates.Length; i++)

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
@@ -45,12 +46,30 @@ namespace Scripts
         
         public bool isFlamed => _isFlamed.Value;
         public bool isOpen => _isOpen.Value;
+        
+        
+        // Initial state references
+        private Vector3 _initialPositionBody;
+        private Quaternion _initialRotationBody;
+        private Vector3 _initialScaleBody;
+        
+        private Vector3 _initialPositionHandler;
+        private Quaternion _initialRotationHandler;
+        private Vector3 _initialScaleHandler;
 
 
         void Start()
         {
+            _initialPositionBody = body.localPosition;
+            _initialRotationBody = body.localRotation;
+            _initialScaleBody = body.localScale;
+            
+            _initialPositionHandler = handler.localPosition;
+            _initialRotationHandler = handler.localRotation;
+            _initialScaleHandler = handler.localScale;
+            
             // Deactivate grab collider
-            SetActiveCollidersState(false);
+            SetActiveCollidersStateSynced(false);
             
             // Deactivate feedback
             arrowsUI.SetActive(false);
@@ -103,8 +122,7 @@ namespace Scripts
                 _prevRotation = body.rotation;
 
                 // Fix arrows orientation
-                // TODO: arrows are displayed on incorrect axis
-                arrowsUI.transform.localRotation = Quaternion.Euler(0, _rotationCounter, 0);
+                arrowsUI.transform.localRotation = Quaternion.Euler(0, 0, -_rotationCounter);
 
                 // Check if completed
                 if (Mathf.Abs(_rotationCounter) >= rotationGoal && AttachBallToHand())
@@ -137,8 +155,10 @@ namespace Scripts
 
         private void ForceRelease()
         {
+            var interactors = new List<IXRSelectInteractor>(_interactable.interactorsSelecting);
+
             // Loop through all interactors currently holding this object
-            foreach (var interactor in _interactable.interactorsSelecting)
+            foreach (var interactor in interactors)
             {
                 // Drop() is called internally
                 _interactable.interactionManager.SelectExit(interactor, _interactable);
@@ -215,7 +235,8 @@ namespace Scripts
             }
         }
 
-        public void SetActiveCollidersState(bool state)
+        // Colliders
+        public void SetActiveCollidersStateSynced(bool state)
         {
             if (!_isOnline)
             {
@@ -227,6 +248,14 @@ namespace Scripts
             else
             {
                 SetActiveCollidersStateRPC(state);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetActiveCollidersStateRPC(bool state)
+        {
+            foreach (var col in colliders)
+            {
+                col.enabled = state;
             }
         }
 
@@ -338,13 +367,121 @@ namespace Scripts
             warningUI.SetActive(false);
         }
         
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetActiveCollidersStateRPC(bool state)
+
+        // ------------------- RESTORATION -------------------
+        
+        public void RestoreToStartConditions()
         {
-            foreach (var col in colliders)
+            // Physics
+            SetActiveCollidersStateSynced(false);
+            StopRigidBodySynced();
+            
+            // Transform
+            body.localPosition = _initialPositionBody;
+            body.localRotation = _initialRotationBody;
+            body.localScale = _initialScaleBody;
+            
+            handler.localPosition = _initialPositionHandler;
+            handler.localRotation = _initialRotationHandler;
+            handler.localScale = _initialScaleHandler;
+            
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            
+            // Components
+            ResetComponentsSynced();
+        }
+
+        
+        // Physics
+        private void StopRigidBodySynced()
+        {
+            if (!_isOnline)
             {
-                col.enabled = state;
+                var rBody = GetComponent<Rigidbody>();
+                if (rBody is not null)
+                {
+                    rBody.linearVelocity = Vector3.zero;
+                    rBody.angularVelocity = Vector3.zero;
+                }
+                
+                _handlerRb.linearVelocity = Vector3.zero;
+                _handlerRb.angularVelocity = Vector3.zero;
             }
+            else
+            {
+                StopRigidBodyRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StopRigidBodyRPC()
+        {
+            var rBody = GetComponent<Rigidbody>();
+            if (rBody is not null)
+            {
+                rBody.linearVelocity = Vector3.zero;
+                rBody.angularVelocity = Vector3.zero;
+            }
+            
+            _handlerRb.linearVelocity = Vector3.zero;
+            _handlerRb.angularVelocity = Vector3.zero;
+        }
+
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _isGrabbed.Value = false;
+                _isFlamed.Value = false;
+                _isOpen.Value = false;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _isGrabbed.Value = false;
+            _isFlamed.Value = false;
+            _isOpen.Value = false;
+        }
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                arrowsUI.SetActive(false);
+                warningUI.SetActive(false);
+                
+                lidRenderer.enabled = true;
+                
+                _gameController.DetachCottonBall(true);
+                _gameController.DetachCottonBall(false);
+                
+                _rotationCounter = 0;
+            }
+            else
+            {
+                ResetComponentsRPC();
+            }
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetComponentsRPC()
+        {
+            arrowsUI.SetActive(false);
+            warningUI.SetActive(false);
+            
+            lidRenderer.enabled = true;
+            
+            _gameController.DetachCottonBall(true);
+            _gameController.DetachCottonBall(false);
+            
+            _rotationCounter = 0;
         }
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 
@@ -13,42 +14,52 @@ namespace Scripts
         // References
         [SerializeField] private List<XRSocketInteractor> sockets;
         [SerializeField] private ParticleSystem bubbles;
+        [SerializeField] private XRGrabInteractable interactable;
+        [SerializeField] private AudioSource bubblesSound;
 
-        private readonly List<TubeController> _tubes = new();
-        
-        // Parameters
-        [SerializeField] private float timeToBoil;
-    
         // Variables
-        private readonly NetworkVariable<float> _timeCounter = 
-            new (0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private readonly NetworkVariable<bool> _onFire = 
-            new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private readonly NetworkVariable<bool> _boiling = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
+        
+        // Initial state references
+        private Vector3 _initialPosition;
+        private Quaternion _initialRotation;
+        private Vector3 _initialScale;
+        
         private bool _isOnline;
+
+        private void Start()
+        {
+            _initialPosition = transform.position;
+            _initialRotation = transform.rotation;
+            _initialScale = transform.localScale;
+        }
 
         private void Awake()
         {
             foreach (var sock in sockets)
             {
                 // Subscribe to socket events
-                // they get synchronized automatically
                 sock.selectEntered.AddListener(OnTubePlaced);
                 sock.selectExited.AddListener(OnTubeRemoved);   
             }
+            _boiling.OnValueChanged += BoilingStateChanged;
+            
+            interactable.selectEntered.AddListener(Grab);
         }
 
         public override void OnDestroy()
         {
-            base.OnDestroy();
             foreach (var sock in sockets)
             {
                 // Always unsubscribe to avoid leaks
                 sock.selectEntered.RemoveListener(OnTubePlaced);
                 sock.selectExited.RemoveListener(OnTubeRemoved);
             }
+            _boiling.OnValueChanged -= BoilingStateChanged;
+            
+            interactable.selectEntered.RemoveListener(Grab);
+            base.OnDestroy();
         }
 
         public override void OnNetworkSpawn()
@@ -62,128 +73,220 @@ namespace Scripts
             base.OnNetworkDespawn();
             _isOnline = false;
         }
-
-    
-        private void Update()
-        {
-            // Only owner updates
-            if (_isOnline && !IsOwner) return;
-        
-            // Heating
-            if (_onFire.Value && _timeCounter.Value <= timeToBoil)
-            {
-                _timeCounter.Value += Time.deltaTime;
-
-                // Boiling time reached
-                if (_timeCounter.Value > timeToBoil)
-                {
-                    _boiling.Value = true;
-                    ToggleParticles(true);
-                }
-            }
-
-            // Cooling
-            if (!_onFire.Value && _timeCounter.Value > 0)
-            {
-                _timeCounter.Value -= Time.deltaTime;
-                
-                if (_timeCounter.Value < 0)
-                {
-                    _timeCounter.Value = 0;
-                }
-            }
-        
-            // Interactions while boiling
-            if (_boiling.Value)
-            {
-                // Turn off
-                if (!_onFire.Value)
-                {
-                    _boiling.Value = false;
-                    ToggleParticles(false);
-                    return;
-                }
-
-                // Heating tubes
-                foreach (var tube in _tubes)
-                {
-                    tube.TubeTimer.AddBoilTime(Time.deltaTime);
-                }
-            }
-        }
         
         // SOCKET EVENTS
 
         private void OnTubePlaced(SelectEnterEventArgs args)
         {
-            TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
-            tube.ReduceCollider();
-            tube.SetClockActive(true);
+            if (_isOnline && !IsOwner) return;
+            Debug.Log("[BeakGlass]: A tube fell into my socket");
             
-            _tubes.Add(tube);
+            TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
+            tube.SetColliderStateSynced(false, true);
+            if (_boiling.Value)
+            {
+                tube.SetOnFireSynced(true);
+            }
         }
 
         private void OnTubeRemoved(SelectExitEventArgs args)
         {
+            if (_isOnline && !IsOwner) return;
+            Debug.Log("[BeakGlass]: A tube was removed from my socket");
+            
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
-            tube.EnlargeColliders();
-            tube.SetClockActive(false);
-        
-            _tubes.Remove(tube);
+            tube.SetColliderStateSynced(true, false);
+            tube.SetOnFireSynced(false);
         }
 
         // ON FIRE ACCESS METHODS
         
-        public void SetOnFireState(bool value)
+        public void SetOnFireStateSynced(bool value)
         {
             if (!_isOnline)
             {
-                _onFire.Value = value;
+                _boiling.Value = value;
+                BoilingStateChanged(false, value);
+                
+                var tubes = GetTubes();
+                foreach (var tube in tubes)
+                {
+                    tube.SetOnFireSynced(value);
+                }
             }
             else
             {
                 SetOnFireStateRPC(value);
             }
         }
-        
         [Rpc(SendTo.Owner)]
         private void SetOnFireStateRPC(bool value)
         {
-            _onFire.Value = value;
+            _boiling.Value = value;
+        }
+        
+        // ReSharper disable Unity.PerformanceAnalysis
+        private List<TubeController> GetTubes()
+        {
+            List<TubeController> tubes = new ();
+            foreach (var socket in sockets)
+            {
+                var tube = socket.firstInteractableSelected;
+                
+                GameObject obj = tube?.transform.gameObject;
+                if (obj is not null)
+                {
+                    var tubeController = obj.GetComponent<TubeController>();
+                    if(tubeController is not null)
+                    {
+                        tubes.Add(tubeController);
+                    }
+                }
+            }
+
+            return tubes;
         }
 
-        // PARTICLES METHODS
-        
-        private void ToggleParticles(bool value)
+        // INTERACTION METHODS
+
+        private void Grab(SelectEnterEventArgs args)
         {
-            if (!_isOnline)
+            if (_isOnline && !IsOwner)
             {
-                if (value)
-                {
-                    bubbles.Play();
-                }
-                else
-                {
-                    bubbles.Stop();      
-                }
-            }
-            else
-            {
-                ToggleParticlesRPC(value);
+                RequestOwnershipServerRPC();
             }
         }
-        
-        [Rpc(SendTo.ClientsAndHost)]
-        private void ToggleParticlesRPC(bool value)
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
         {
-            if (value)
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+        }
+
+        private void BoilingStateChanged(bool oldValue, bool newValue)
+        {
+            // Particle System
+            if (newValue)
             {
                 bubbles.Play();
+                bubblesSound.Play();
             }
             else
             {
                 bubbles.Stop();
+                bubblesSound.Stop();
             }
+            
+            // Tubes attached
+            var tubes = GetTubes();
+            foreach (var tube in tubes)
+            {
+                tube.SetOnFireSynced(newValue);
+            }
+        }
+        
+        
+        // ------------------- RESTORATION -------------------
+
+
+        public void RestoreToStartConditions()
+        {
+            // Physics
+            StopRigidBodySynced();
+            
+            // Transform
+            transform.position = _initialPosition;
+            transform.rotation = _initialRotation;
+            transform.localScale = _initialScale;
+            
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            ResetComponentsSynced();
+        }
+        
+        // Physics
+        private void StopRigidBodySynced()
+        {
+            if (!_isOnline)
+            {
+                var rBody = GetComponent<Rigidbody>();
+                if (rBody is not null)
+                {
+                    rBody.linearVelocity = Vector3.zero;
+                    rBody.angularVelocity = Vector3.zero;
+                }
+            }
+            else
+            {
+                StopRigidBodyRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StopRigidBodyRPC()
+        {
+            var rBody = GetComponent<Rigidbody>();
+            if (rBody is not null)
+            {
+                rBody.linearVelocity = Vector3.zero;
+                rBody.angularVelocity = Vector3.zero;
+            }
+        }
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                // sockets
+                foreach (var socket in sockets)
+                {
+                    var gi = socket.GetOldestInteractableSelected();
+                    if (gi != null)
+                    {
+                        socket.interactionManager.CancelInteractableSelection(gi);
+                    }
+                }
+                // Bubbles
+                bubbles.Stop();
+            }
+            else
+            {
+                ResetComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetComponentsRPC()
+        {
+            // sockets
+            foreach (var socket in sockets)
+            {
+                var gi = socket.GetOldestInteractableSelected();
+                if (gi != null)
+                {
+                    socket.interactionManager.CancelInteractableSelection(gi);
+                }
+            }
+            // Bubbles
+            bubbles.Stop();
+        }
+
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _boiling.Value = false;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _boiling.Value = false;
         }
     }
 }

@@ -11,6 +11,8 @@ namespace Scripts
         // References
         [SerializeField] private Image pieImage;
         [SerializeField] private TextMeshProUGUI pieText;
+        [SerializeField] private GameObject visuals;
+        [SerializeField] private AudioSource bellSound;
         
         // Readonly values
         private readonly float[] _timeIntervals = {60, 60, 60};
@@ -49,7 +51,7 @@ namespace Scripts
             pieImage.fillAmount = 1;
         }
     
-        public void AddBoilTime(float time)
+        public void AddBoilTimeSynced(float time)
         {
             // Only owner updates
             // Only updates if the interval isn't greater than the last one
@@ -61,19 +63,20 @@ namespace Scripts
             // Next time interval reached
             if (_boilTime.Value >= _timeIntervals[_interval.Value])
             {
-                _interval.Value++;
-                
                 // Time counter resets
                 _boilTime.Value -= _timeIntervals[_interval.Value];
+                _interval.Value++;
                 
                 // Feedback
                 if (!_isOnline)
                 {
-                    pieText.text = _minutes[_interval.Value - 1].ToString();   
+                    pieText.text = _minutes[_interval.Value - 1].ToString();
+                    bellSound.Play();
                 }
                 else
                 {
                     ChangeTextRPC(_minutes[_interval.Value - 1].ToString());
+                    PlayBellRPC();
                 }
             }
             
@@ -93,11 +96,80 @@ namespace Scripts
         {
             pieText.text = text;
         }
-        
         [Rpc(SendTo.ClientsAndHost)]
         private void ChangeImageRPC(float amount)
         {
             pieImage.fillAmount = amount;
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PlayBellRPC()
+        {
+            bellSound.Play();
+        }
+
+        private void SetVisualsActiveStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                visuals.SetActive(state);
+            }
+            else
+            {
+                SetVisualsActiveStateRPC(state);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetVisualsActiveStateRPC(bool state)
+        {
+            visuals.SetActive(state);
+        }
+        
+        // ------------------- RESTORATION -------------------
+        
+        public void RestoreToStartConditionsSynced()
+        {
+            // Controller Variables
+            ResetNetworkVariablesSynced();
+            
+            // Components
+            ResetComponentsSynced();
+        }
+
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _interval.Value = 0;
+                _boilTime.Value = 0;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _interval.Value = 0;
+            _boilTime.Value = 0;
+        }
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                pieImage.fillAmount = 1;
+                pieText.text = "0";
+            }
+            else
+            {
+                ChangeImageRPC(1);
+                ChangeTextRPC("0");
+            }
+
+            SetVisualsActiveStateSynced(true);
         }
     }
 }

@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// ReSharper disable InconsistentNaming
+// ReSharper disable once CheckNamespace
 namespace Unity.VRTemplate
 {
     /// <summary>
@@ -7,7 +9,7 @@ namespace Unity.VRTemplate
     /// </summary>
     public class TurnToFace : MonoBehaviour
     {
-#pragma warning disable 649
+        #pragma warning disable 649
         public Transform faceTarget
         {
             get => m_FaceTarget;

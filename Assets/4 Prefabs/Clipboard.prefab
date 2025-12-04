@@ -460,11 +460,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: " \u2610 Dividir Placas Petri en 3 zonas usando el l\xE1piz.\n\n \u2610
-    Hacer cultivo de control (siembra).\n\n \u2610 Calentar los tubos durante 1 minuto
-    y sembrar.\n\n \u2610 Calentar los tubos durante 5 minutos y sembrar.\n\n \u2610
-    Calentar los tubos durante 10 minutos y sembrar.\n\n \u2610 Incubar por 24 horas
-    a 37\xB0C.\n\n"
+  m_text: " \u25A1 Dividir Placas Petri en 3 zonas usando el l\xE1piz.\n\n \u25A1
+    Hacer cultivo de control (siembra).\n\n \u25A1 Calentar los tubos durante 1 minuto
+    y sembrar.\n\n \u25A1 Calentar los tubos durante 5 minutos y sembrar.\n\n \u25A1
+    Calentar los tubos durante 10 minutos y sembrar.\n\n \u25A1 Incubar por 24 horas
+    a 37\xB0C.\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -987,6 +987,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a26cfa74745ce33469454db165d30b41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkBoxNum: 6
   mainTextUGUI: {fileID: 8685748975422784505}
   audioSource: {fileID: 7710930637050697566}
@@ -1044,7 +1045,19 @@ MonoBehaviour:
       m_Calls: []
   m_SelectEntered:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2652244017963044131}
+        m_TargetAssemblyTypeName: Scripts.ClipboardController, Assembly-CSharp
+        m_MethodName: Grab
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_SelectExited:
     m_PersistentCalls:
       m_Calls: []
@@ -1184,7 +1197,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
@@ -1365,10 +1378,20 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -312557604529295948, guid: 3ce1fc74357c7df4a93e2a34df20b5c7,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3ce1fc74357c7df4a93e2a34df20b5c7,
         type: 3}
       propertyPath: m_Name
       value: Visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 7096607406601019820, guid: 3ce1fc74357c7df4a93e2a34df20b5c7,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7096607406601019820, guid: 3ce1fc74357c7df4a93e2a34df20b5c7,
         type: 3}

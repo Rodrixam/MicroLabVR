@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 // ReSharper disable once CheckNamespace
 namespace Scripts
@@ -20,6 +21,10 @@ namespace Scripts
         [SerializeField] private LineRenderer[] lineRenderers;
         
         [SerializeField] private ParticleSystem particles;
+
+        [Header("Debug")]
+        [SerializeField] private InputActionReference skipButton;
+        public bool skipButtonEnabled;
         
         // STATE VARIABLES
         
@@ -92,6 +97,15 @@ namespace Scripts
             {
                 lr.positionCount = 0;
             }
+            
+            skipButton.action.performed += SkipTask;
+            skipButton.action.Enable();
+        }
+
+        private void OnDisable()
+        {
+            skipButton.action.performed -= SkipTask;
+            skipButton.action.Disable();
         }
 
         private void Update()
@@ -170,7 +184,7 @@ namespace Scripts
                 }
             }
             // ------------------------- ONLINE -------------------------
-            else if(IsOwner)
+            else
             {
                 // Deactivate interactive points
                 for(var i = 0; i < interactivePoints.Length; i++)
@@ -184,16 +198,10 @@ namespace Scripts
                     RequestLineRendererPositionCountRPC(i, 0);
                 }
             }
-            else
-            {
-                Debug.LogError("Petri dropped by not owner... a fix for delay in ownership assignation might be needed");
-            }
         }
 
         private void PointReached(Collider other)
         {
-            Debug.Log("[PETRI LINE TASK]: Point reached. Checking for validity... " +
-                      $"{!other.CompareTag("PenTip")} - {!_lidController.isGrabbed} - {_allLinesDrawn.Value} - {_isOnline && !IsOwner}");
             if (!other.CompareTag("PenTip") || !_lidController.isGrabbed || _allLinesDrawn.Value || (_isOnline && !IsOwner)) return;
             Debug.Log("[PETRI LINE TASK]: Point reached valid.");
         
@@ -203,113 +211,35 @@ namespace Scripts
                 _penTip = other.transform;
             }
             
-            // ------------------------- LOCAL -------------------------
-            if (!_isOnline)
+            // Beginning line draw
+            if (!_netFinishingLine.Value)
             {
-                // Beginning line draw
-                if (!_netFinishingLine.Value)
-                {
-                    _netFinishingLine.Value = true;
+                _netFinishingLine.Value = true;
                     
-                    // Activate center point
-                    interactivePoints[_netLinesProgress.Value + 1].SetActive(false);
-                    interactivePoints[0].SetActive(true);
-
-                    // Activate line renderer
-                    lineRenderers[_netLinesProgress.Value].positionCount = 2;
-                        
-                    lineRenderers[_netLinesProgress.Value].SetPosition(0,
-                        _netInteractivePointsPosition[_netLinesProgress.Value + 1]);
-                    lineRenderers[_netLinesProgress.Value].SetPosition(1,
-                        _netInteractivePointsPosition[_netLinesProgress.Value + 1]);
-                }
-                // Finishing line draw
-                else
-                {
-                    _netLinesProgress.Value++;
-                    _netFinishingLine.Value = false;
-                
-                    // Complete drawing
-                    if (_netLinesProgress.Value > 2)
-                    {
-                        _allLinesDrawn.Value = true;
-                        
-                        // Activate final draw
-                        divisionLines.SetActive(true);
-                        
-                        // Deactivate interactive points
-                        foreach (var p in interactivePoints)
-                        {
-                            p.SetActive(false);
-                        }
+                // Activate center point
+                RequestInteractivePointActiveChangeSynced(_netLinesProgress.Value + 1, false);
+                RequestInteractivePointActiveChangeSynced(0, true);
                     
-                        // Deactivate line renderers
-                        foreach (var lr in lineRenderers)
-                        {
-                            lr.positionCount = 0;
-                        }
-                        
-                        // Victory particles
-                        particles.Play();
-                        
-                        // Update Petri Controller
-                        _lidController.PetriController.CompleteActivity();
-                        return;
-                    }
-                
-                    // Activate next point
-                    interactivePoints[_netLinesProgress.Value + 1].SetActive(true);
-                    interactivePoints[0].SetActive(false);
-                }
+                // Activate line renderer
+                RequestLineRendererPositionCountSynced(_netLinesProgress.Value, 2);
             }
-            // ------------------------- ONLINE -------------------------
+            // Finishing line draw
             else
             {
-                // Beginning line draw
-                if (!_netFinishingLine.Value)
-                {
-                    _netFinishingLine.Value = true;
-                    
-                    // Activate center point
-                    RequestInteractivePointActiveChangeRPC(_netLinesProgress.Value + 1, false);
-                    RequestInteractivePointActiveChangeRPC(0, true);
-                    
-                    // Activate line renderer
-                    RequestLineRendererPositionCountRPC(_netLinesProgress.Value, 2);
-                }
-                // Finishing line draw
-                else
-                {
-                    _netLinesProgress.Value++;
-                    _netFinishingLine.Value = false;
+                _netLinesProgress.Value++;
+                _netFinishingLine.Value = false;
                 
-                    // Complete drawing
-                    if (_netLinesProgress.Value > 2)
-                    {
-                        _allLinesDrawn.Value = true;
-                        
-                        // Deactivate interactive points
-                        for (int i = 0; i < interactivePoints.Length; i++) {
-                            RequestInteractivePointActiveChangeRPC(i, false);
-                        }
-                        
-                        // Deactivate line renderers
-                        for (int i = 0; i < lineRenderers.Length; i++)
-                        {
-                            RequestLineRendererPositionCountRPC(i, 0);
-                        }
-                        
-                        // Victory particles
-                        RequestParticleSystemPlayRPC();
-                        return;
-                    }
-                
-                    // Activate next point
-                    RequestInteractivePointActiveChangeRPC(_netLinesProgress.Value + 1, true);
-                    RequestInteractivePointActiveChangeRPC(0, false);
+                // Complete drawing
+                if (_netLinesProgress.Value > 2)
+                {
+                    CompleteDrawingSynced();
+                    return;
                 }
+                
+                // Activate next point
+                RequestInteractivePointActiveChangeSynced(_netLinesProgress.Value + 1, true);
+                RequestInteractivePointActiveChangeSynced(0, false);
             }
-
         }
 
         private void PenLifted()
@@ -353,12 +283,38 @@ namespace Scripts
             particles.Play();
         }
 
+        private void RequestInteractivePointActiveChangeSynced(int index, bool value)
+        {
+            if (!_isOnline)
+            {
+                interactivePoints[index].SetActive(value);
+            }
+            else
+            {
+                RequestInteractivePointActiveChangeRPC(index, value);
+            }
+        }
         [Rpc(SendTo.ClientsAndHost)]
         private void RequestInteractivePointActiveChangeRPC(int index, bool value)
         {
             interactivePoints[index].SetActive(value);
         }
-        
+
+        private void RequestLineRendererPositionCountSynced(int index, int value)
+        {
+            if (!_isOnline)
+            {
+                lineRenderers[index].positionCount = value;
+
+                if (value < 2) return;
+                lineRenderers[index].SetPosition(0, _netInteractivePointsPosition[index + 1]);
+                lineRenderers[index].SetPosition(1, _netInteractivePointsPosition[index + 1]);
+            }
+            else
+            {
+                RequestLineRendererPositionCountRPC(index, value);
+            }
+        }
         [Rpc(SendTo.ClientsAndHost)]
         private void RequestLineRendererPositionCountRPC(int index, int value)
         {
@@ -369,6 +325,146 @@ namespace Scripts
         private void ChangeDivisionLinesActive(bool previous, bool current)
         {
             divisionLines.SetActive(current);
+        }
+
+        private void CompleteDrawingSynced()
+        {
+            // Return if not called from the owner
+            if(_isOnline && !IsOwner)
+            {
+                Debug.LogError("[PetriLineTask]: CompleteDrawingSynced called from not owner");
+                return;
+            }
+            
+            _allLinesDrawn.Value = true;
+            
+            // Activate final draw
+            divisionLines.SetActive(true);
+            
+            // Deactivate interactive points
+            for (int i = 0; i < interactivePoints.Length; i++) {
+                RequestInteractivePointActiveChangeSynced(i, false);
+            }
+            
+            // Deactivate line renderers
+            for (int i = 0; i < lineRenderers.Length; i++)
+            {
+                RequestLineRendererPositionCountSynced(i, 0);
+            }
+            
+            // Victory particles
+            if (!_isOnline)
+            {
+                particles.Play();
+            }
+            else
+            {
+                RequestParticleSystemPlayRPC();
+            }
+            
+            // Update Petri Controller
+            _lidController.PetriController.CompleteTaskSynced();
+        }
+
+        private void SkipTask(InputAction.CallbackContext context)
+        {
+            if (!skipButtonEnabled) return;
+            CompleteDrawingSynced();
+        }
+        
+        
+        // ------------------- RESTORATION -------------------
+        
+        
+        public void RestoreToStartConditions()
+        {
+            // Controller Variables
+            ResetComponentsSynced();
+            ResetNetworkVariablesSynced();
+        }
+        
+        
+        // Network Variables
+        private void ResetNetworkVariablesSynced()
+        {
+            if (!_isOnline)
+            {
+                _netLinesProgress.Value = 0;
+                _netFinishingLine.Value = false;
+                _allLinesDrawn.Value = false;
+                
+                for (var i = 0; i < interactivePoints.Length; i++)
+                {
+                    _netInteractivePointsPosition[i] = Vector3.zero;
+                }
+
+                _netPenTipPosition.Value = default;
+            }
+            else
+            {
+                ResetNetworkVariablesRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetNetworkVariablesRPC()
+        {
+            _netLinesProgress.Value = 0;
+            _netFinishingLine.Value = false;
+            _allLinesDrawn.Value = false;
+            
+            for (var i = 0; i < interactivePoints.Length; i++)
+            {
+                _netInteractivePointsPosition[i] = Vector3.zero;
+            }
+
+            _netPenTipPosition.Value = default;
+        }
+        
+        
+        // Components
+        private void ResetComponentsSynced()
+        {
+            if (!_isOnline)
+            {
+                enabled = true;
+                _penTip = null;
+                divisionLines.SetActive(false);
+                
+                // Deactivate interactive points
+                foreach (var t in interactivePoints)
+                {
+                    t.SetActive(false);
+                }
+                
+                // Deactivate line renderers
+                foreach (var lr in lineRenderers)
+                {
+                    lr.positionCount = 0;
+                }
+                
+            }
+            else
+            {
+                ResetComponentsRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ResetComponentsRPC()
+        {
+            enabled = true;
+            _penTip = null;
+            
+            // Deactivate interactive points
+            foreach (var t in interactivePoints)
+            {
+                t.SetActive(false);
+            }
+            
+            // Deactivate line renderers
+            foreach (var lr in lineRenderers)
+            {
+                lr.positionCount = 0;
+            }
         }
     }
 }
