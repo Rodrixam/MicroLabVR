@@ -44,6 +44,10 @@ public class OnlineConsoleController : NetworkBehaviour
         stateText.text = "Desconectado";
     }
 
+    public void CreateRoom()
+    {
+        _networkGameManager.CreateNewLobby();
+    }
     
     public void TryQuickJoin()
     {

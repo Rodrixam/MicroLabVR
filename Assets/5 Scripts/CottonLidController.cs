@@ -13,12 +13,18 @@ namespace Scripts
         [Header("Colliders")] 
         [SerializeField] private List<Collider> colliders;
 
-        // Visuals
-        [Header("Visuals")]
+        // Visual
+        [Header("Visual")]
         [SerializeField] private GameObject arrowsUI;
         [SerializeField] private GameObject warningUI;
         [SerializeField] private MeshRenderer lidRenderer;
-
+        
+        // Audio
+        [Header("Audio")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip corkClip;
+        [SerializeField] private AudioClip uncorkClip;
+        
         // Transforms
         [Header("Transform")]
         [SerializeField] private Transform body;
@@ -141,6 +147,9 @@ namespace Scripts
                     {
                         OpenLidRPC();   
                     }
+                    
+                    // Audio
+                    PlayLidSoundSynced(true);
                 }
             }
         }
@@ -186,6 +195,7 @@ namespace Scripts
                     lidRenderer.enabled = true;
                 
                     ForceRelease();
+                    PlayLidSoundSynced(false);
                 }
             }
             else
@@ -298,6 +308,42 @@ namespace Scripts
             Vector3 euler = body.localRotation.eulerAngles;
             euler.y = handler.localRotation.eulerAngles.y;
             body.rotation = Quaternion.Euler(euler);
+        }
+        
+        // AUDIO STUFF
+        private void PlayLidSoundSynced(bool open)
+        {
+            if (!_isOnline)
+            {
+                if (open)
+                {
+                    audioSource.clip = uncorkClip;
+                    audioSource.Play();
+                }
+                else
+                {
+                    audioSource.clip = corkClip;
+                    audioSource.Play();
+                }
+            }
+            else
+            {
+                PlayLidSoundRPC(open);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PlayLidSoundRPC(bool open)
+        {
+            if (open)
+            {
+                audioSource.clip = uncorkClip;
+                audioSource.Play();
+            }
+            else
+            {
+                audioSource.clip = corkClip;
+                audioSource.Stop();
+            }
         }
 
         // RPC METHODS

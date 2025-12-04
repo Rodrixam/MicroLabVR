@@ -15,8 +15,9 @@ namespace Scripts
         [SerializeField] private TubeTimerController tubeTimer;
         [SerializeField] private TubePickSampleTask pickTask;
         [SerializeField] private ParticleSystem particles;
-        [SerializeField] private AudioSource timePassingSound;
+        private BeakGlassController _beakGlass;
         public TubeTimerController TubeTimer => tubeTimer;
+        public CottonLidController CottonLid => cottonLid;
 
         [Header("Colliders")]
         [SerializeField] private Collider longCollider;
@@ -24,6 +25,8 @@ namespace Scripts
         
         private readonly NetworkVariable<bool> _onHeat = 
             new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        public bool OnHeat => _onHeat.Value;
         
         // Initial state references
         private Vector3 _initialPosition;
@@ -60,6 +63,8 @@ namespace Scripts
             _initialPosition = transform.position;
             _initialRotation = transform.rotation;
             _initialScale = transform.localScale;
+            
+            _beakGlass = FindAnyObjectByType<BeakGlassController>();
         }
 
         private void Update()
@@ -69,17 +74,12 @@ namespace Scripts
             // Boil Timer
             if (_onHeat.Value && TubeTimer.interval < 3)
             {
-                if (!timePassingSound.isPlaying)
-                {
-                    SetTimePassingSoundSynced(true);  
-                } 
-                
                 TubeTimer.AddBoilTimeSynced(Time.deltaTime);
+                if(TubeTimer.interval >= 3)
+                {
+                    _beakGlass.AskTimerSoundSynced(false);
+                }
             }
-            else if (timePassingSound.isPlaying)
-            {
-                SetTimePassingSoundSynced(false);  
-            } 
             
             // Sample Pick
             if (cottonLid.isOpen && cottonLid.isFlamed && !pickTask.tracking)
@@ -92,38 +92,7 @@ namespace Scripts
                 pickTask.DeactivateTracking();
             }
         }
-
-        private void SetTimePassingSoundSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                if (state)
-                {
-                    timePassingSound.Play();
-                }
-                else
-                {
-                    timePassingSound.Stop();
-                }
-            }
-            else
-            {
-                SetTimePassingSoundRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetTimePassingSoundRPC(bool state)
-        {
-            if (state)
-            {
-                timePassingSound.Play();
-            }
-            else
-            {
-                timePassingSound.Stop();
-            }
-        }
-
+        
         // INTERACTION METHODS
         
         private void Grab(SelectEnterEventArgs args)
@@ -147,10 +116,7 @@ namespace Scripts
         }
 
         public void Drop()
-        {
-            // Don't change colliders if the lid is open or this is not owner
-            if (!cottonLid.isOpen || (_isOnline && !IsOwner)) return;
-            
+        {   
             // Cotton Lid colliders
             SetCottonLidCollidersStateSynced(false);
         }
@@ -229,6 +195,10 @@ namespace Scripts
             if (!_isOnline)
             {
                 _onHeat.Value = state;
+                if (state && TubeTimer.interval < 3)
+                {
+                    _beakGlass.AskTimerSoundSynced(true);
+                }
             }
             else
             {
@@ -239,6 +209,10 @@ namespace Scripts
         private void SetOnFireRPC(bool state)
         {
             _onHeat.Value = state;
+            if (state && TubeTimer.interval < 3)
+            {
+                _beakGlass.AskTimerSoundSynced(true);
+            }
         }
         
         
@@ -256,7 +230,7 @@ namespace Scripts
             transform.localScale = _initialScale;
             
             // Controller Variables
-            ResetNetworkVariablesSynced();
+            SetOnFireSynced(false);
             
             // Tasks
             tubeTimer.RestoreToStartConditionsSynced();
@@ -291,24 +265,6 @@ namespace Scripts
                 rBody.linearVelocity = Vector3.zero;
                 rBody.angularVelocity = Vector3.zero;
             }
-        }
-
-        // Network Variables
-        private void ResetNetworkVariablesSynced()
-        {
-            if (!_isOnline)
-            {
-                _onHeat.Value = false;
-            }
-            else
-            {
-                ResetNetworkVariablesRPC();
-            }
-        }
-        [Rpc(SendTo.Owner)]
-        private void ResetNetworkVariablesRPC()
-        {
-            _onHeat.Value = false;
         }
     }
 }

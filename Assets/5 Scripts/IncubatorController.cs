@@ -210,18 +210,25 @@ namespace Scripts
                 return;
             }
 
+            Color cAux;
             foreach (var lid in _validPetri)
             {
                 lid.PetriController.RemoveAgar();
-            
+                
                 int eColiInterval = lid.PetriController.SeedTask.eColiInterval;
-                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.EColi, eColiSprites[eColiInterval], Color.white);
+                cAux = Color.white;
+                if(eColiSprites[eColiInterval] is null) cAux = Color.clear;
+                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.EColi, eColiSprites[eColiInterval], cAux);
             
                 int sAureusInterval = lid.PetriController.SeedTask.sAureusInterval;
-                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.SAureus, sAureusSprites[sAureusInterval], Color.white);
+                cAux = Color.white;
+                if(sAureusSprites[sAureusInterval] is null) cAux = Color.clear;
+                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.SAureus, sAureusSprites[sAureusInterval], cAux);
             
                 int sporesInterval = lid.PetriController.SeedTask.sporesInterval;
-                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.Spores, sporesSprites[sporesInterval], Color.white);
+                cAux = Color.white;
+                if(sporesSprites[sporesInterval] is null) cAux = Color.clear;
+                lid.PetriController.SeedTask.CallSetMicrobesImages(TubePickSampleTask.Samples.Spores, sporesSprites[sporesInterval], cAux);
             }
         
             _audioSource.clip = correctBell;

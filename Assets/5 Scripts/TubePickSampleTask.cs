@@ -41,7 +41,7 @@ namespace Scripts
             // Asa enters start point
             startPoint.OnTriggerEntered += (other) =>
             {
-                if (!other.CompareTag("AsaTip")) return;
+                if (!other.CompareTag("AsaTip") || !controller.CottonLid.isOpen) return;
                 if (!tracking)
                 {
                     wrongBuzz.Play();
@@ -51,7 +51,7 @@ namespace Scripts
                 var asa = other.GetComponentInParent<AsaController>();
                 if (asa is not null)
                 {
-                    if (!asa.isSterilized)
+                    if (!asa.isSterilized && asa.sample != sample)
                     {
                         wrongBuzz.Play();
                     }

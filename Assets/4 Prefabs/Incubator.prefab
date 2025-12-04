@@ -62,15 +62,15 @@ MonoBehaviour:
   - {fileID: 3185289218775804547}
   visualText: {fileID: 7451062982330845142}
   eColiSprites:
-  - {fileID: 21300000, guid: 366e2e3db5f193d41b6da139cd3b84f3, type: 3}
   - {fileID: 21300000, guid: 0c47c06493ca96b4bb2fb34d6e10f073, type: 3}
   - {fileID: 21300000, guid: 2c9c0a36ce500c644ad436b6a1d891bb, type: 3}
   - {fileID: 21300000, guid: e30a5f9226629f34a8f073f2fbd89dac, type: 3}
+  - {fileID: 0}
   sAureusSprites:
-  - {fileID: 21300000, guid: 58bfb03a79689ef4db70a3b58b3d3894, type: 3}
-  - {fileID: 21300000, guid: b60c86c1b30325548ab20909dc88c742, type: 3}
   - {fileID: 21300000, guid: 57abc8eda6ef27a4e8aaa3eac0473a7d, type: 3}
   - {fileID: 21300000, guid: de94b484a4221d542ae1464e72b1600b, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
   sporesSprites:
   - {fileID: 21300000, guid: 61fa8ec9b41db9142bb2d6a344b3dac4, type: 3}
   - {fileID: 21300000, guid: f54ab58f63350164fa8c989268c7c145, type: 3}
@@ -135,7 +135,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

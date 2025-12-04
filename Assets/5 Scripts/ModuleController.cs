@@ -36,6 +36,7 @@ namespace Scripts
         [Header("Tubes and Asa")]
         [SerializeField] private List<TubeController> tubes;
         [SerializeField] private AsaController asa;
+        [SerializeField] private TubeRackController tubeRack;
 
         private bool _isOnline;
         
@@ -103,11 +104,7 @@ namespace Scripts
 
         // OTHERS
         
-        // TODO POLISH:
-        //      IGNORAR CUANDO ASA CON SAMPLE INTERACCIONA DE FORMA NO ESTERILIZADA CON BPCA DEL TUBP
-        //      SONIDO DE DESTAPAR EN TUBO
-        //      LID PETRIS GENERAN CLIPING - must check -
-        //      REWORK ONLINE CONSOLE: 
+        // TODO REWORK ONLINE CONSOLE: 
         //          LA CONSOLA ONLINE DEBE DETECTAR SI ESTÁ CONECTADO A INTERNET PARA FUNCIONAR
         //          SE DEBE PODER CREAR ROOMS DISTINTAS, CON UN LÍMITE PARA 2 JUGADORES, Y PODER ELEGIR UNIRSE A UNO
 
@@ -196,7 +193,8 @@ namespace Scripts
                 tube.RestoreToStartConditions();
             // Asa
             asa.RestoreToStartConditions();
-            
+            // TubeRack
+            tubeRack.RestoreToStartConditions();
         }
     }
 }

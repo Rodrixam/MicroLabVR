@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -16,7 +17,9 @@ namespace Scripts
         [SerializeField] private ParticleSystem bubbles;
         [SerializeField] private XRGrabInteractable interactable;
         [SerializeField] private AudioSource bubblesSound;
-
+        [SerializeField] private AudioSource timerSound;
+        private readonly List<TubeController> _attachedTubes =new();
+        
         // Variables
         private readonly NetworkVariable<bool> _boiling = 
             new (false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -87,6 +90,8 @@ namespace Scripts
             {
                 tube.SetOnFireSynced(true);
             }
+
+            StoreTubeReferenceSynced(tube);
         }
 
         private void OnTubeRemoved(SelectExitEventArgs args)
@@ -97,6 +102,71 @@ namespace Scripts
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.SetColliderStateSynced(true, false);
             tube.SetOnFireSynced(false);
+
+            RemoveTubeReferenceSynced(tube);
+        }
+
+        // ADD TUBES
+        private void StoreTubeReferenceSynced(TubeController tube)
+        {
+            if (_attachedTubes.Contains(tube)) return;
+            
+            if (!_isOnline)
+            {
+                _attachedTubes.Add(tube);
+            }
+            else
+            {
+                StoreTubeReferenceRPC(tube.NetworkObject);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void StoreTubeReferenceRPC(NetworkObjectReference tubeReference)
+        {
+            if (tubeReference.TryGet(out NetworkObject networkObject))
+            {
+                var tube = networkObject.GetComponent<TubeController>();
+                _attachedTubes.Add(tube);
+            }
+        }
+        // REMOVE TUBES
+        private void RemoveTubeReferenceSynced(TubeController tube)
+        {
+            if (!_isOnline)
+            {
+                _attachedTubes.Remove(tube);
+            }
+            else
+            {
+                RemoveTubeReferenceRPC(tube.NetworkObject);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void RemoveTubeReferenceRPC(NetworkObjectReference tubeReference)
+        {
+            if (tubeReference.TryGet(out NetworkObject networkObject))
+            {
+                var tube = networkObject.GetComponent<TubeController>();
+                _attachedTubes.Remove(tube);
+            }
+        }
+
+
+        private void ClearTubeReferenceSynced()
+        {
+            if (!_isOnline)
+            {
+                _attachedTubes.Clear();
+            }
+            else
+            {
+                ClearTubeReferenceRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ClearTubeReferenceRPC()
+        {
+            _attachedTubes.Clear();
         }
 
         // ON FIRE ACCESS METHODS
@@ -176,14 +246,45 @@ namespace Scripts
             {
                 bubbles.Stop();
                 bubblesSound.Stop();
+                timerSound.Stop();
             }
             
             // Tubes attached
-            var tubes = GetTubes();
-            foreach (var tube in tubes)
+            foreach (var tube in _attachedTubes)
             {
                 tube.SetOnFireSynced(newValue);
             }
+        }
+
+        public void AskTimerSoundSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                if(state)   TryTurnTimerOn();
+                else        TryTurnTimerOff();
+            }
+            else
+            {
+                AskTimerSoundRPC(state);   
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void AskTimerSoundRPC(bool state)
+        {
+            if(state)   TryTurnTimerOn();
+            else        TryTurnTimerOff();
+        }
+
+        private void TryTurnTimerOn()
+        {
+            if (timerSound.isPlaying) return;
+            timerSound.Play();
+        }
+        private void TryTurnTimerOff()
+        {
+            if (!timerSound.isPlaying) return;
+            if (_attachedTubes.Any(tube => tube.OnHeat && tube.TubeTimer.interval < 3)) return;
+            timerSound.Stop();
         }
         
         
@@ -201,6 +302,7 @@ namespace Scripts
             transform.localScale = _initialScale;
             
             // Controller Variables
+            ClearTubeReferenceSynced();
             ResetNetworkVariablesSynced();
             ResetComponentsSynced();
         }
