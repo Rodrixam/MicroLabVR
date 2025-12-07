@@ -118,6 +118,7 @@ namespace Scripts
             else
             {
                 StoreTubeReferenceRPC(tube.NetworkObject);
+                tube.RequestOwnershipServerRPC();
             }
         }
         [Rpc(SendTo.ClientsAndHost)]
@@ -150,8 +151,7 @@ namespace Scripts
                 _attachedTubes.Remove(tube);
             }
         }
-
-
+        // CLEAR TUBES
         private void ClearTubeReferenceSynced()
         {
             if (!_isOnline)
@@ -232,6 +232,11 @@ namespace Scripts
             // Change ownership
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
             GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+
+            foreach (var tube in _attachedTubes)
+            {
+                tube.RequestOwnershipServerRPC();
+            }
         }
 
         private void BoilingStateChanged(bool oldValue, bool newValue)

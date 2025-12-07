@@ -141,7 +141,7 @@ namespace Scripts
         // Already online synchronized by _sterilized.OnValueChanged
         private void UpdateWarningUI(bool previous, bool current)
         {
-            warningUI.SetActive(current);
+            warningUI.SetActive(!current);
         }
 
 
@@ -208,11 +208,30 @@ namespace Scripts
             }
                 
             // Turn off tracking particles
-            SetMicrobeParticlesState(false);
+            SetMicrobeParticlesStateSynced(false);
                 
             return true;
         }
-        public void SetMicrobeParticlesState(bool state)
+        public void SetMicrobeParticlesStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                if (state)
+                {
+                    microbesParticles.Play();   
+                }
+                else
+                {
+                    microbesParticles.Stop();
+                }
+            }
+            else
+            {
+                SetMicrobeParticlesStateRPC(state);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetMicrobeParticlesStateRPC(bool state)
         {
             if (state)
             {
@@ -225,8 +244,20 @@ namespace Scripts
         }
         
         // Microbe (sample) Renderer
+        public void SetMicrobeParticlesColorSynced(Color color)
+        {
+            if (!_isOnline)
+            {
+                var main = microbesParticles.main;
+                main.startColor = new ParticleSystem.MinMaxGradient(color);
+            }
+            else
+            {
+                SetMicrobeParticlesColorRPC(color);
+            }
+        }
         [Rpc(SendTo.ClientsAndHost)]
-        public void SetMicrobeParticlesColorRPC(Color color)
+        private void SetMicrobeParticlesColorRPC(Color color)
         {
             var main = microbesParticles.main;
             main.startColor = new ParticleSystem.MinMaxGradient(color);

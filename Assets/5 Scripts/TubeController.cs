@@ -95,6 +95,7 @@ namespace Scripts
         
         // INTERACTION METHODS
         
+        // Grab
         private void Grab(SelectEnterEventArgs args)
         {
             // Skip if wasn't picked by hand
@@ -104,92 +105,25 @@ namespace Scripts
             if(_isOnline) RequestOwnershipServerRPC();
             
             // Cotton Lid colliders
-            //if (cottonLid.isOpen) return;
             SetCottonLidCollidersStateSynced(true);
         }
         [ServerRpc(RequireOwnership = false)]
-        private void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        public void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
         {
             // Change ownership
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
             GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+            cottonLid.GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
         }
-
+        
+        // Drop
         public void Drop()
         {   
             // Cotton Lid colliders
             SetCottonLidCollidersStateSynced(false);
         }
-
-        private bool IsPickedByHand(SelectEnterEventArgs args)
-        {
-            if (args.interactorObject.transform.CompareTag("LeftHand") ||
-                args.interactorObject.transform.CompareTag("RightHand"))
-            {
-                return true;
-            }
-            return false;
-        }
-
-        // SOCKET METHODS
         
-        public void SetColliderStateSynced(bool longState, bool shortState)
-        {
-            if (!_isOnline)
-            {
-                longCollider.enabled = longState;
-                shortCollider.enabled = shortState;   
-            }
-            else
-            {
-                SwapColliderStateRPC(longState, shortState);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SwapColliderStateRPC(bool longState, bool shortState)
-        {
-            longCollider.enabled = longState;
-            shortCollider.enabled = shortState;
-        }
-        
-        /*
-        public void SetClockActiveStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                tubeTimer.SetVisualsActiveStateSynced(state);   
-            }
-            else
-            {
-                SetClockActiveStateRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetClockActiveStateRPC(bool state)
-        {
-            Debug.Log($"[TubeTimer]: Am I setting the clock active? {state}");
-            tubeTimer.SetVisualsActiveStateSynced(state);
-        }//*/
-        
-        
-        // RPC METHODS
-        private void SetCottonLidCollidersStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                cottonLid.SetActiveCollidersStateSynced(state);
-            }
-            else
-            {
-                SetCottonLidCollidersStateRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetCottonLidCollidersStateRPC(bool state)
-        {
-            cottonLid.SetActiveCollidersStateSynced(state);
-        }
-
+        // Set on/off fire
         public void SetOnFireSynced(bool state)
         {
             if (!_isOnline)
@@ -214,7 +148,55 @@ namespace Scripts
                 _beakGlass.AskTimerSoundSynced(true);
             }
         }
+
+        // Aux
+        private bool IsPickedByHand(SelectEnterEventArgs args)
+        {
+            if (args.interactorObject.transform.CompareTag("LeftHand") ||
+                args.interactorObject.transform.CompareTag("RightHand"))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        // COLLIDER CONTROL METHODS
         
+        public void SetColliderStateSynced(bool longState, bool shortState)
+        {
+            if (!_isOnline)
+            {
+                longCollider.enabled = longState;
+                shortCollider.enabled = shortState;   
+            }
+            else
+            {
+                SwapColliderStateRPC(longState, shortState);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SwapColliderStateRPC(bool longState, bool shortState)
+        {
+            longCollider.enabled = longState;
+            shortCollider.enabled = shortState;
+        }
+        
+        private void SetCottonLidCollidersStateSynced(bool state)
+        {
+            if (!_isOnline)
+            {
+                cottonLid.SetActiveCollidersStateSynced(state);
+            }
+            else
+            {
+                SetCottonLidCollidersStateRPC(state);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetCottonLidCollidersStateRPC(bool state)
+        {
+            cottonLid.SetActiveCollidersStateSynced(state);
+        }
         
         // ------------------- RESTORATION -------------------
         

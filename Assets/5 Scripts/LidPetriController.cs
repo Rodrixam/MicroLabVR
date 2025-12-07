@@ -18,6 +18,7 @@ namespace Scripts
         [SerializeField] private PetriController petriController;
         public PetriController PetriController => petriController;
         private PetriController originalPetri;
+        private Rigidbody _rBody;
 
         // Network Variables
         private readonly NetworkVariable<bool> _isGrabbed =
@@ -51,6 +52,9 @@ namespace Scripts
             
             socket.selectEntered.AddListener(OnObjectPlaced);
             socket.selectExited.AddListener(OnObjectRemoved);
+
+            _rBody = GetComponent<Rigidbody>();
+            _rBody.isKinematic = false;
         }
         public override void OnDestroy()
         {
@@ -79,25 +83,31 @@ namespace Scripts
         
         // ------------------- INTERACTION METHODS -------------------
 
-        
+        // GRAB
         private void Grab(SelectEnterEventArgs args)
         {
             // Ignore if not picked by hand
             if (!IsPickedByHand(args)) return;
             
             // Request Ownership to move the object
-            RequestOwnershipServerRPC();
+            if (_isOnline)
+            {
+                RequestOwnershipServerRPC();   
+            }
             
             // Set isGrabbed true
             SetIsGrabbedStateSynced(true);
             
             // Call grab in LineTask
-            petriController.LineTask.Grab();
+            petriController.LineTask.GrabSynced();
 
             if (_petriIsAttached.Value)
             {
                 //Request ownership of petri
-                petriController.RequestOwnershipServerRPC();
+                if (_isOnline)
+                {
+                    petriController.RequestOwnershipServerRPC();
+                }
                 
                 // Change colliders
                 if (_detachable.Value)
@@ -107,17 +117,34 @@ namespace Scripts
                 }
             }
         }
-    
+        [ServerRpc(RequireOwnership = false)]
+        private void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        {
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+
+            if (_petriIsAttached.Value)
+            {
+                petriController.RequestOwnershipServerRPC();
+            }
+        }
+        [Rpc(SendTo.Owner)]
+        private void MakeOwnerRequestPetriOwnershipRPC()
+        {
+            petriController.RequestOwnershipServerRPC();
+        }
+        
+        // DROP
         private void Drop(SelectExitEventArgs args)
         {
             // Set isGrabbed false
             SetIsGrabbedStateSynced(false);
             
             // Call drop from the line task
-            petriController.LineTask.Drop();
+            petriController.LineTask.DropSynced();
             
             // Change colliders
-            // Skip if not detachable, colliders only change when detachable
             if (!_detachable.Value) return;
             SetCollidersStateSynced(true);
             if (_petriIsAttached.Value)
@@ -128,31 +155,37 @@ namespace Scripts
     
         
         // ------------------- SOCKET METHODS -------------------
-    
-        
+
+        // ON OBJECT PLACED
         private void OnObjectPlaced(SelectEnterEventArgs args)
         {
-            Debug.Log("[LidPetri]: Hello, something fell in my socket");
-            if(_isOnline && !IsOwner) return;
-            
+            Debug.Log("[LidPetri]: I'm gonna attach something");
+            if (_petriIsAttached.Value)
+            {
+                Debug.Log("[LidPetri]: Something fell in my socket, but I already had something attached");
+                return;
+            }
+
             // Update references in LidPetri
             var petri = args.interactableObject.transform.GetComponentInChildren<PetriController>();
             if (petri is null) return;
-            petriController = petri;
-            
+            UpdatePetriReferenceSynced(petri);
+
             // Update references in Petri
             SetPetriLidReferenceSynced();
             SetPetriParentSynced();
-            SetPetriPositionTrackingSynced(false);
-            SetPetriPhysicsStateSynced(false);
-            SynchronizeTransformsPetriSocketSynced();
             
+            //petriController.SetNetworkComponentsStateSynced(false);
+            petriController.SetPhysicsStateSynced(false);
+            
+            SynchronizeTransformsPetriSocketSynced();// -   transform might not be necessary to sync
+
             // Set lpIsAttached true
             SetPetriIsAttachedStateSynced(true);
-            
+
+        
             // Avoid Colliders Overlapping
-            Debug.Log($"[LidPetri]: I've attached a Petri, now I'm gonna avoid a colliders overlap. IsGrabbed state: {isGrabbed}");
-            if(isGrabbed)
+            if (isGrabbed)
             {
                 SetCollidersStateSynced(false);
             }
@@ -160,26 +193,69 @@ namespace Scripts
             {
                 SetPetriCollidersStateSynced(false);
             }
+            
+            // Online syncing
+            if (_isOnline)
+            {
+                // Update ownership of little petri
+                MakeOwnerRequestPetriOwnershipRPC();   
+                
+                // Sync socket holding
+                AttachInOthersRPC(petri.NetworkObject);
+            }
         }
+        
+        // ON OBJECT REMOVED
         private void OnObjectRemoved(SelectExitEventArgs args)
         {
-            Debug.Log("[LidPetri]: Petri was removed from socket");
-            //if(_isOnline && !IsOwner) return;
-            
+            // Change petriIsAttached value
+            if (!_petriIsAttached.Value) return;
             SetPetriIsAttachedStateSynced(false);
-            DetachPetriSynced();
+            
+            // Activate position tracking
+            // petriController.SetNetworkComponentsStateSynced(true);
+            // petriController.SetPhysicsStateSynced(false);
+            
+            if (!_isOnline)
+            {
+                // Set parent null
+                petriController.transform.SetParent(null);
+            }
+            else
+            {
+                // Set parent null
+                SetPetriParentNullRPC();
+                // Sync detach
+                DetachInOthersRPC();
+            }
         }
-        
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetPetriParentNullRPC()
+        {
+            petriController.transform.SetParent(null);
+        }
 
         // ------------------- RPC METHODS -------------------
-
         
-        [ServerRpc(RequireOwnership = false)]
-        private void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        // Set petriController reference
+        private void UpdatePetriReferenceSynced(PetriController petri)
         {
-            // Change ownership
-            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
-            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+            if (!_isOnline)
+            {
+                petriController = petri;
+            }
+            else
+            {
+                UpdatePetriReferenceRPC(petri.NetworkObject);
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void UpdatePetriReferenceRPC(NetworkObjectReference petriReference)
+        {
+            if (!petriReference.TryGet(out NetworkObject netObj)) return;
+            
+            var petri = netObj.GetComponent<PetriController>();
+            petriController = petri;
         }
         
         // Set littlePetri parent as lid transform
@@ -243,34 +319,7 @@ namespace Scripts
             }
         }
         
-        
-        // Detach petri for everyone and set parent as null
-        private void DetachPetriSynced()
-        {
-            if (!_isOnline)
-            {
-                // Set parent null
-                petriController.transform.SetParent(null);
-                // Activate position tracking
-                petriController.SetNetworkComponentsStateSynced(true);
-            }
-            else
-            {
-                // Set parent null
-                SetPetriParentNullRPC();
-                // Activate position tracking
-                SetPetriPositionTrackingRPC(true);
-                
-                if (!IsOwner) return;
-                DetachInOthersRPC();
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetPetriParentNullRPC()
-        {
-            Debug.Log("[LidPetri]: I'm gonna set the petri's parent as null");
-            petriController.transform.SetParent(null);
-        }
+        // Sync detaching
         [Rpc(SendTo.NotMe)]
         private void DetachInOthersRPC()
         {
@@ -281,41 +330,31 @@ namespace Scripts
                 socket.interactionManager.CancelInteractableSelection(interactable);
             }
         }
-
-        private void SetPetriPositionTrackingSynced(bool state)
+        
+        // Sync attaching
+        [Rpc(SendTo.NotMe)]
+        private void AttachInOthersRPC(NetworkObjectReference petriReference)
         {
-            if (!_isOnline)
+            if (socket.hasSelection)
             {
-                petriController.SetNetworkComponentsStateSynced(state);
+                Debug.Log("[LidPetri]: I can't attach a petri in my socket, there's one there already");
+                return;
             }
-            else
+            if (petriReference.TryGet(out NetworkObject obj))
             {
-                SetPetriPositionTrackingRPC(state);
+                var grabComponent = obj.GetComponent<XRGrabInteractable>();
+                if (grabComponent is null)
+                {
+                    Debug.LogError("Unable to get GrabComponent");
+                    return;
+                }
+                socket.interactionManager.SelectEnter(socket, (IXRSelectInteractable) grabComponent);
+                return;
             }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetPetriPositionTrackingRPC(bool state)
-        {
-            petriController.SetNetworkComponentsStateSynced(state);
+            Debug.LogError("Unable to get NetworkObject");
         }
         
-        private void SetPetriPhysicsStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                petriController.SetPhysicsStateSynced(state);
-            }
-            else
-            {
-                SetPetriPhysicsStateTrackingRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetPetriPhysicsStateTrackingRPC(bool state)
-        {
-            petriController.SetPhysicsStateSynced(state);
-        }
-        
+        // Sync positions
         private void SynchronizeTransformsPetriSocketSynced()
         {
             if (!_isOnline)
@@ -328,13 +367,14 @@ namespace Scripts
                 SynchronizeTransformsPetriSocketRPC();
             }
         }
-        [Rpc(SendTo.ClientsAndHost)]
+        [Rpc(SendTo.Owner)]
         private void SynchronizeTransformsPetriSocketRPC()
         {
             petriController.transform.position = socket.attachTransform.position;
             petriController.transform.rotation = socket.attachTransform.rotation;
         }
         
+        // Set PetriController Colliders
         private void SetPetriCollidersStateSynced(bool state)
         {
             if (!_isOnline)
@@ -353,7 +393,6 @@ namespace Scripts
         }
         
         // ------------------- RPC ACCESS TO VARIABLES -------------------
-        
         
         // _isGrabbed
         private void SetIsGrabbedStateSynced(bool state)
@@ -424,7 +463,6 @@ namespace Scripts
             }
             return false;
         }
-
         
         
         // ------------------- RESTORATION -------------------
@@ -452,12 +490,8 @@ namespace Scripts
         {
             if (!_isOnline)
             {
-                var rBody = GetComponent<Rigidbody>();
-                if (rBody is not null)
-                {
-                    rBody.linearVelocity = Vector3.zero;
-                    rBody.angularVelocity = Vector3.zero;
-                }
+                _rBody.linearVelocity = Vector3.zero;
+                _rBody.angularVelocity = Vector3.zero;
             }
             else
             {
@@ -467,12 +501,8 @@ namespace Scripts
         [Rpc(SendTo.ClientsAndHost)]
         private void StopRigidBodyRPC()
         {
-            var rBody = GetComponent<Rigidbody>();
-            if (rBody is not null)
-            {
-                rBody.linearVelocity = Vector3.zero;
-                rBody.angularVelocity = Vector3.zero;
-            }
+            _rBody.linearVelocity = Vector3.zero;
+            _rBody.angularVelocity = Vector3.zero;
         }
 
         // Components
@@ -520,7 +550,7 @@ namespace Scripts
             {
                 manager.SelectExit(petriController.GrabInteractable.firstInteractorSelecting, petriController.GrabInteractable);
             }
-
+            
             // Attach to socket
             manager.SelectEnter((IXRSelectInteractor) socket, petriController.GrabInteractable);
         }

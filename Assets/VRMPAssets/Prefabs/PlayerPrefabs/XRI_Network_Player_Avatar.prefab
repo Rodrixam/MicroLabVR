@@ -469,7 +469,7 @@ MonoBehaviour:
   m_ShowHostVisuals: 1
   m_LocalPlayerMaterialSwap:
     headRend: {fileID: 4004270285897414336}
-    hmdRend: {fileID: 0}
+    hmdRend: {fileID: 3694227489506335238}
     hostRend: {fileID: 7910445519108651472}
     hands:
     - {fileID: 5915267321722912462}
@@ -481,8 +481,8 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 12dd6b1c138d94665975aea5db3cd411, type: 2}
     - {fileID: 2100000, guid: 5b2d35c6c9b7dc542a0527697aa04274, type: 2}
     hmdMaterials:
-    - {fileID: 2100000, guid: 82d43eabbdbe02f469f9862c8d39c967, type: 2}
-    - {fileID: 2100000, guid: a0aedf40583136b4a85139a4dfbe6cad, type: 2}
+    - {fileID: 2100000, guid: 1730630e933bb314a9416c4731c34f04, type: 2}
+    - {fileID: -6087771358165109452, guid: 961bdaeab794cf04caad3ddaebf730af, type: 3}
     hostMaterial: {fileID: 2100000, guid: fd8467e62fe6a284cacdad31209fb552, type: 2}
     handMaterial: {fileID: 2100000, guid: 042d6e2f6bdad7c41852455197c567f3, type: 2}
 --- !u!114 &4588994832583027022

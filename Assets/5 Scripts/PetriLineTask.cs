@@ -146,7 +146,7 @@ namespace Scripts
         
         // INTERACTION METHODS
         
-        public void Grab()
+        public void GrabSynced()
         {
             if (_allLinesDrawn.Value) return;
 
@@ -163,7 +163,7 @@ namespace Scripts
             }
         }
         
-        public void Drop()
+        public void DropSynced()
         {
             if (_allLinesDrawn.Value) return;
             _penTip = null;

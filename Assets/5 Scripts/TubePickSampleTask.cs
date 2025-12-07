@@ -41,6 +41,7 @@ namespace Scripts
             // Asa enters start point
             startPoint.OnTriggerEntered += (other) =>
             {
+                if (_isOnline && !IsOwner) return;
                 if (!other.CompareTag("AsaTip") || !controller.CottonLid.isOpen) return;
                 if (!tracking)
                 {
@@ -53,41 +54,61 @@ namespace Scripts
                 {
                     if (!asa.isSterilized && asa.sample != sample)
                     {
-                        wrongBuzz.Play();
+                        PlayWrongBuzzSynced();
                     }
                     
                     _asaTracking.Add(asa);   
-                    asa.SetMicrobeParticlesState(true);
+                    asa.SetMicrobeParticlesStateSynced(true);
                 }
             };
             // Asa exits tracking zone
             triggerZone.OnTriggerExited += (other) =>
             {
+                if (_isOnline && !IsOwner) return;
                 if (!tracking || !other.CompareTag("AsaTip")) return;
 
                 var asa = other.GetComponentInParent<AsaController>();
                 if (_asaTracking.Remove(asa))
                 {
-                    asa.SetMicrobeParticlesState(false);
+                    asa.SetMicrobeParticlesStateSynced(false);
                 }
             };
             // Asa stays on tracking zone
             triggerZone.OnTriggerStayed += (other) =>
             {
+                if (_isOnline && !IsOwner) return;
                 foreach (var asa in _asaTracking)
                 {
                     float distance = Vector3.Cross(triggerZone.transform.up, other.transform.position - triggerZone.transform.position).magnitude;
                     float normalized = Mathf.InverseLerp(0f, 0.01f, distance);
                 
-                    asa.SetMicrobeParticlesColorRPC(Color.Lerp(Color.green, Color.red, normalized));
+                    asa.SetMicrobeParticlesColorSynced(Color.Lerp(Color.green, Color.red, normalized));
                 }
             };
             // Asa gets the sample
             pickupPoint.OnTriggerEntered += (other) =>
             {
+                if (_isOnline && !IsOwner) return;
                 if (!tracking || !other.CompareTag("AsaTip")) return;
                 AttachMicrobeToAsaSynced(other);
             };
+        }
+
+        private void PlayWrongBuzzSynced()
+        {
+            if (!_isOnline)
+            {
+                wrongBuzz.Play();
+            }
+            else
+            {
+                PlayWrongBuzzRPC();
+            }
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PlayWrongBuzzRPC()
+        {
+            wrongBuzz.Play();
         }
 
         // Asa gets the Sample

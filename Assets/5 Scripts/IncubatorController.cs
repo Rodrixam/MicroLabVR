@@ -26,7 +26,8 @@ namespace Scripts
         [SerializeField] private TextMeshProUGUI visualText;
 
         private readonly List<LidPetriController> _validPetri = new ();
-        private bool _completed; 
+        private NetworkVariable<bool> _completed = 
+            new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner); 
 
         [Header("Cultivation Sprites")] 
         [SerializeField] private List<Sprite> eColiSprites;
@@ -135,7 +136,7 @@ namespace Scripts
                 _validPetri.Add(lid);
                 visualText.text = $"{_validPetri.Count}/4";
             
-                if (_validPetri.Count >= 4) { _completed = true; }   
+                if (_validPetri.Count >= 4) { _completed.Value = true; }   
             }
             else
             {
@@ -152,7 +153,7 @@ namespace Scripts
                 _validPetri.Add(lid);
                 visualText.text = $"{_validPetri.Count}/4";
             
-                if (_validPetri.Count >= 4) { _completed = true; }   
+                if (IsOwner && _validPetri.Count >= 4) { _completed.Value = true; }   
             }
         }
 
@@ -166,7 +167,7 @@ namespace Scripts
                 _validPetri.Remove(lid);
                 visualText.text = $"{_validPetri.Count}/4";
         
-                if (_validPetri.Count < 4) { _completed = false; }   
+                if (_validPetri.Count < 4) { _completed.Value = false; }   
             }
             else
             {
@@ -183,7 +184,7 @@ namespace Scripts
                 _validPetri.Remove(lid);
                 visualText.text = $"{_validPetri.Count}/4";
         
-                if (_validPetri.Count < 4) { _completed = false; }   
+                if (_validPetri.Count < 4) { _completed.Value = false; }   
             }
         }
 
@@ -203,7 +204,7 @@ namespace Scripts
         
         private void CookThem()
         {
-            if (!_completed)
+            if (!_completed.Value)
             {
                 _audioSource.clip = wrongBuzz;
                 _audioSource.Play();
@@ -266,7 +267,10 @@ namespace Scripts
         {
             _validPetri.Clear();
             visualText.text = $"{_validPetri.Count}/4";
-            _completed = false;
+            if (_isOnline && IsOwner)
+            {
+                _completed.Value = false;   
+            }
             
             // detach from sockets
             foreach(var socket in sockets)

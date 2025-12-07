@@ -141,7 +141,7 @@ namespace Scripts
         
         ///////////     RESTORATION     ///////////
         
-        private void RestoreToolsSynced()
+        public void RestoreToolsSynced()
         {
             // Restore Tools
             if (!_isOnline)
@@ -168,12 +168,12 @@ namespace Scripts
             pen.RestoreToStartConditions();
             
             
-            // Petri Lids
-            foreach (var lid in lids) 
-                lid.RestoreToStartConditions();
             // Little Petris
             foreach (var petri in petris)
                 petri.RestoreToStartConditions();
+            // Petri Lids
+            foreach (var lid in lids) 
+                lid.RestoreToStartConditions();
             // Incubator
             incubator.RestoreToStartConditions();
             

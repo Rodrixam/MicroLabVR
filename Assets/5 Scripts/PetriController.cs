@@ -119,25 +119,6 @@ namespace Scripts
         {
             _isGrabbed.Value = state;
         }
-
-        public void SetNetworkComponentsStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                networkTransform.enabled = state;
-                networkRigidbody.enabled = state;
-            }
-            else
-            {
-                SetNetworkComponentsStateRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetNetworkComponentsStateRPC(bool state)
-        {
-            networkTransform.enabled = state;
-            networkRigidbody.enabled = state;
-        }
         
         public void SetPhysicsStateSynced(bool state)
         {
@@ -251,6 +232,7 @@ namespace Scripts
             // Physics
             SetCollidersStateSynced(false);
             StopRigidBodySynced();
+            SetPhysicsStateSynced(false);
             
             // Transform
             transform.position = _initialPosition;
@@ -260,7 +242,6 @@ namespace Scripts
             // Controller Variables
             ResetNetworkVariablesSynced();
             ResetComponentsSynced();
-            SetNetworkComponentsStateSynced(false);
             lineTask.RestoreToStartConditions();
             seedTask.RestoreToStartConditions();
         }
