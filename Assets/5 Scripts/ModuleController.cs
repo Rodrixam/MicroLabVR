@@ -41,14 +41,37 @@ namespace Scripts
         private bool _isOnline;
         
         // NETWORK BEHAVIOUR METHODS
+        
+        private void OnEnable()
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        }
+        private void OnDisable()
+        {
+            if (NetworkManager.Singleton != null)
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        }
+        private void OnClientConnected(ulong clientId)
+        {
+            // Only host runs this (server side)
+            if (!NetworkManager.Singleton.IsHost && !NetworkManager.Singleton.IsServer)
+                return;
 
+            Debug.Log("A new player joined: " + clientId);
+
+            // Call your method here:
+            RestoreToolsSynced();
+        }
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             
             // Tools reset to default
             _isOnline = true;
-            RestoreToolsSynced();
+            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            {
+                RestoreToolsSynced();
+            }
             
             // Button stuff
             _pushCounter.OnValueChanged += UpdateButtonUI;
@@ -59,7 +82,6 @@ namespace Scripts
             
             // Tools reset to default
             _isOnline = false;
-            RestoreToolsSynced();
             
             // Button stuff
             _pushCounter.OnValueChanged -= UpdateButtonUI;
@@ -153,10 +175,9 @@ namespace Scripts
                 RestoreToolsRPC();
             }
         }
-        [Rpc(SendTo.ClientsAndHost)]
+        [Rpc(SendTo.Server)]
         private void RestoreToolsRPC()
         {
-            if (!IsHost) return;
             CallAllToolsToRestore();
         }
 
@@ -168,12 +189,12 @@ namespace Scripts
             pen.RestoreToStartConditions();
             
             
-            // Little Petris
-            foreach (var petri in petris)
-                petri.RestoreToStartConditions();
             // Petri Lids
             foreach (var lid in lids) 
                 lid.RestoreToStartConditions();
+            // Little Petris
+            foreach (var petri in petris)
+                petri.RestoreToStartConditions();
             // Incubator
             incubator.RestoreToStartConditions();
             

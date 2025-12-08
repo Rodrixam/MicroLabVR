@@ -15,7 +15,7 @@ public class LobbyDisplayController : MonoBehaviour
     }
     public void SetNum(int players)
     {
-        peopleNum.text = $"{players} / 2";
+        peopleNum.text = $"{players}/2";
         SetIcon(players);
     }
     private void SetIcon(int players)

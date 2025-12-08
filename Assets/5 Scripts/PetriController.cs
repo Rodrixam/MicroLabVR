@@ -107,12 +107,22 @@ namespace Scripts
 
         private void Drop(SelectExitEventArgs args)
         {
+            Debug.Log($"[LittlePetri]: I was dropped, I'm setting my physics state as true. IsOwner? {IsOwner}");
             if (_isOnline && !IsOwner) return;
             
             // Change isGrabbed value
-            SetIsGrabbedRPC(false);
+            if(!_isOnline)
+            {
+                _isGrabbed.Value = false;;
+            }
+            else
+            {
+                SetIsGrabbedRPC(false);   
+            }
+            
             // Activate physics
             SetPhysicsStateSynced(true);
+            SetCollidersStateSynced(true);
         }
         [Rpc(SendTo.Owner)]
         private void SetIsGrabbedRPC(bool state)
@@ -122,6 +132,7 @@ namespace Scripts
         
         public void SetPhysicsStateSynced(bool state)
         {
+            Debug.Log($"[LittlePetri]: I'm setting my physics state as {state}. IsOwner? {IsOwner}");
             if (!_isOnline)
             {
                 rBody.isKinematic = !state;
@@ -230,9 +241,9 @@ namespace Scripts
         public void RestoreToStartConditions()
         {
             // Physics
-            SetCollidersStateSynced(false);
             StopRigidBodySynced();
             SetPhysicsStateSynced(false);
+            SetCollidersStateSynced(false);
             
             // Transform
             transform.position = _initialPosition;
@@ -250,6 +261,7 @@ namespace Scripts
         // Physics
         private void StopRigidBodySynced()
         {
+            Debug.Log($"[LittlePetri]: I'm gonna stop my rigidbody velocity. IsOwner? {IsOwner}");
             if (!_isOnline)
             {
                 rBody.linearVelocity = Vector3.zero;

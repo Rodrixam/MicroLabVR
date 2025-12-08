@@ -13,7 +13,6 @@ namespace Scripts
         [Header("Colliders")] 
         [SerializeField] private Collider lidCollider;
         [SerializeField] private XRGrabInteractable handler;
-        private Rigidbody _handlerRb;
 
         // Visual
         [Header("Visual")]
@@ -45,9 +44,6 @@ namespace Scripts
             
             // Activate feedback
             warningUI.SetActive(false);
-            
-            // Get handler references
-            _handlerRb = handler.GetComponent<Rigidbody>();
 
             // Get gameController reference
             _gameController = FindAnyObjectByType<GameController>();
@@ -141,15 +137,25 @@ namespace Scripts
                 handler.interactionManager.SelectExit(interactor, handler);
             }
         }
+        [ServerRpc(RequireOwnership = false)]
+        public void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
+        {
+            // Change ownership
+            ulong grabbingClientId = rpcParams.Receive.SenderClientId;
+            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+        }
         // DROP
         
         public void Drop()
         {
-            handler.transform.position = transform.position;
-            handler.transform.rotation = transform.rotation;
+            handler.transform.localPosition = Vector3.zero;
+            handler.transform.localRotation = Quaternion.identity;
+        }
 
-            _handlerRb.linearVelocity = Vector3.zero;
-            _handlerRb.angularVelocity = Vector3.zero;
+        [Rpc(SendTo.Owner)]
+        public void DropRPC()
+        {
+            Drop();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -183,7 +189,7 @@ namespace Scripts
             {
                 lidCollider.enabled = state;
             }
-            else
+            else //if(IsOwner)
             {
                 SetActiveCollidersStateRPC(state);
             }
@@ -284,13 +290,6 @@ namespace Scripts
             
             // Components
             ResetComponentsSynced();
-        }
-        
-        // Physics
-        [Rpc(SendTo.ClientsAndHost)]
-        private void DropRPC()
-        {
-            Drop();
         }
 
         // Network Variables

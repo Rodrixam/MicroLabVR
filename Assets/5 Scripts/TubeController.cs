@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -101,26 +103,34 @@ namespace Scripts
             // Skip if wasn't picked by hand
             if (!IsPickedByHand(args)) return;
             
-            // Ownership
-            if(_isOnline) RequestOwnershipServerRPC();
-            
             // Cotton Lid colliders
-            SetCottonLidCollidersStateSynced(true);
+            cottonLid.SetActiveCollidersStateSynced(true);
+            
+            // Ownership
+            if (_isOnline)
+            {
+                if (!IsOwner)
+                {
+                    RequestOwnershipServerRPC();
+                }
+                cottonLid.RequestOwnershipServerRPC();
+                cottonLid.DropRPC();
+            }
         }
         [ServerRpc(RequireOwnership = false)]
         public void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
         {
             // Change ownership
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
-            GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
-            cottonLid.GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+            NetworkObject.ChangeOwnership(grabbingClientId);
         }
         
         // Drop
         public void Drop()
-        {   
+        {
+            if (_isOnline && !IsOwner) return;
             // Cotton Lid colliders
-            SetCottonLidCollidersStateSynced(false);
+            cottonLid.SetActiveCollidersStateSynced(false);
         }
         
         // Set on/off fire
@@ -179,23 +189,6 @@ namespace Scripts
         {
             longCollider.enabled = longState;
             shortCollider.enabled = shortState;
-        }
-        
-        private void SetCottonLidCollidersStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                cottonLid.SetActiveCollidersStateSynced(state);
-            }
-            else
-            {
-                SetCottonLidCollidersStateRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetCottonLidCollidersStateRPC(bool state)
-        {
-            cottonLid.SetActiveCollidersStateSynced(state);
         }
         
         // ------------------- RESTORATION -------------------

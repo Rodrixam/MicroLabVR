@@ -311,7 +311,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 230827695
   InScenePlacedSourceGlobalObjectIdHash: 230827695
   DeferredDespawnTick: 0
-  Ownership: 3
+  Ownership: 2
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -557,7 +557,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkRigidbodyBaseExpanded: 0
   UseRigidBodyForMotion: 0
-  AutoUpdateKinematicState: 1
+  AutoUpdateKinematicState: 0
   AutoSetKinematicOnDespawn: 0
 --- !u!1 &8581713615097244563
 GameObject:

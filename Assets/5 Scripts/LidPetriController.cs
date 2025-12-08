@@ -177,7 +177,6 @@ namespace Scripts
             
             //petriController.SetNetworkComponentsStateSynced(false);
             petriController.SetPhysicsStateSynced(false);
-            
             SynchronizeTransformsPetriSocketSynced();// -   transform might not be necessary to sync
 
             // Set lpIsAttached true
@@ -191,7 +190,7 @@ namespace Scripts
             }
             else
             {
-                SetPetriCollidersStateSynced(false);
+                petriController.SetCollidersStateSynced(false);
             }
             
             // Online syncing
@@ -208,6 +207,7 @@ namespace Scripts
         // ON OBJECT REMOVED
         private void OnObjectRemoved(SelectExitEventArgs args)
         {
+            Debug.Log($"[LidPetri]: An object was removed. petriIsAttached? {_petriIsAttached.Value}");
             // Change petriIsAttached value
             if (!_petriIsAttached.Value) return;
             SetPetriIsAttachedStateSynced(false);
@@ -374,24 +374,6 @@ namespace Scripts
             petriController.transform.rotation = socket.attachTransform.rotation;
         }
         
-        // Set PetriController Colliders
-        private void SetPetriCollidersStateSynced(bool state)
-        {
-            if (!_isOnline)
-            {
-                petriController.SetCollidersStateSynced(state);
-            }
-            else
-            {
-                SetPetriCollidersStateRPC(state);
-            }
-        }
-        [Rpc(SendTo.ClientsAndHost)]
-        private void SetPetriCollidersStateRPC(bool state)
-        {
-            petriController.SetCollidersStateSynced(state);
-        }
-        
         // ------------------- RPC ACCESS TO VARIABLES -------------------
         
         // _isGrabbed
@@ -492,6 +474,7 @@ namespace Scripts
             {
                 _rBody.linearVelocity = Vector3.zero;
                 _rBody.angularVelocity = Vector3.zero;
+                _rBody.isKinematic = false;
             }
             else
             {
@@ -503,6 +486,7 @@ namespace Scripts
         {
             _rBody.linearVelocity = Vector3.zero;
             _rBody.angularVelocity = Vector3.zero;
+            _rBody.isKinematic = false;
         }
 
         // Components
@@ -534,6 +518,11 @@ namespace Scripts
             petriController = originalPetri;
             
             // socket
+            ResetSocketRPC();
+        }
+        [Rpc(SendTo.Owner)]
+        private void ResetSocketRPC()
+        {
             var gi = socket.GetOldestInteractableSelected();
             if (gi != null)
             {
