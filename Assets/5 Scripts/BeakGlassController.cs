@@ -82,7 +82,7 @@ namespace Scripts
         private void OnTubePlaced(SelectEnterEventArgs args)
         {
             if (_isOnline && !IsOwner) return;
-            Debug.Log("[BeakGlass]: A tube fell into my socket");
+            Debug.Log("[BeakGlass]: A tube fell into my socket. I'm Owner.");
             
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.SetColliderStateSynced(false, true);
@@ -97,7 +97,7 @@ namespace Scripts
         private void OnTubeRemoved(SelectExitEventArgs args)
         {
             if (_isOnline && !IsOwner) return;
-            Debug.Log("[BeakGlass]: A tube was removed from my socket");
+            Debug.Log("[BeakGlass]: A tube was removed from my socket. I'm Owner.");
             
             TubeController tube = args.interactableObject.transform.GetComponentInChildren<TubeController>();
             tube.SetColliderStateSynced(true, false);
@@ -118,7 +118,7 @@ namespace Scripts
             else
             {
                 StoreTubeReferenceRPC(tube.NetworkObject);
-                tube.RequestOwnershipServerRPC();
+                //tube.RequestOwnershipServerRPC();
             }
         }
         [Rpc(SendTo.ClientsAndHost)]

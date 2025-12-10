@@ -20,7 +20,7 @@ namespace Scripts
         
         [Header("Clipboard and Pen")]
         [SerializeField] private ClipboardController clipboard;
-        [SerializeField] private GrabOwnership pen;
+        [SerializeField] private List<GrabOwnership> pens;
 
         [Header("Petri Plates and Incubator")]
         [SerializeField] private List<LidPetriController> lids;
@@ -35,7 +35,7 @@ namespace Scripts
 
         [Header("Tubes and Asa")]
         [SerializeField] private List<TubeController> tubes;
-        [SerializeField] private AsaController asa;
+        [SerializeField] private List<AsaController> asas;
         [SerializeField] private TubeRackController tubeRack;
 
         private bool _isOnline;
@@ -186,8 +186,8 @@ namespace Scripts
             // Clipboard
             clipboard.RestoreToStartConditionsSynced();
             // Pen
-            pen.RestoreToStartConditions();
-            
+            foreach (var pen in pens) 
+                pen.RestoreToStartConditions();
             
             // Petri Lids
             foreach (var lid in lids) 
@@ -213,7 +213,8 @@ namespace Scripts
             foreach (var tube in tubes)
                 tube.RestoreToStartConditions();
             // Asa
-            asa.RestoreToStartConditions();
+            foreach (var asa in asas)
+                asa.RestoreToStartConditions();
             // TubeRack
             tubeRack.RestoreToStartConditions();
         }

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -102,7 +100,7 @@ namespace Scripts
         {
             // Skip if wasn't picked by hand
             if (!IsPickedByHand(args)) return;
-            
+            Debug.Log($"[Tube]: I was grabbed. isOwner? {IsOwner}");
             // Cotton Lid colliders
             cottonLid.SetActiveCollidersStateSynced(true);
             
@@ -111,15 +109,17 @@ namespace Scripts
             {
                 if (!IsOwner)
                 {
+                    Debug.Log($"[Tube]: Since I'm not owner, I'm going to request ownership.");
                     RequestOwnershipServerRPC();
                 }
                 cottonLid.RequestOwnershipServerRPC();
-                cottonLid.DropRPC();
+                //cottonLid.Drop();
             }
         }
         [ServerRpc(RequireOwnership = false)]
         public void RequestOwnershipServerRPC(ServerRpcParams rpcParams = default)
         {
+            Debug.Log($"[Tube (Server)]: It was requested a change of ownership.");
             // Change ownership
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
             NetworkObject.ChangeOwnership(grabbingClientId);
@@ -128,6 +128,7 @@ namespace Scripts
         // Drop
         public void Drop()
         {
+            Debug.Log($"[Tube]: I was dropped. isOwner? {IsOwner}");
             if (_isOnline && !IsOwner) return;
             // Cotton Lid colliders
             cottonLid.SetActiveCollidersStateSynced(false);
@@ -149,7 +150,7 @@ namespace Scripts
                 SetOnFireRPC(state);
             }
         }
-        [Rpc(SendTo.Owner)]
+        [Rpc(SendTo.Authority)]
         private void SetOnFireRPC(bool state)
         {
             _onHeat.Value = state;
@@ -181,14 +182,21 @@ namespace Scripts
             }
             else
             {
-                SwapColliderStateRPC(longState, shortState);
+                SetShortColliderStateRPC(shortState);
+                SetLongColliderStateRPC(longState);
             }
         }
         [Rpc(SendTo.ClientsAndHost)]
-        private void SwapColliderStateRPC(bool longState, bool shortState)
+        private void SetShortColliderStateRPC(bool shortState)
+        {
+            shortCollider.enabled = shortState;   
+            Debug.Log($"[Tube]: Setting my shortCollider? {shortState}.");
+        }
+        [Rpc(SendTo.ClientsAndHost)]
+        private void SetLongColliderStateRPC(bool longState)
         {
             longCollider.enabled = longState;
-            shortCollider.enabled = shortState;
+            Debug.Log($"[Tube]: Setting my colliders. longCollider? {longState}.");
         }
         
         // ------------------- RESTORATION -------------------

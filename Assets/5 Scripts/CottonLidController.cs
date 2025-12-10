@@ -143,16 +143,18 @@ namespace Scripts
             // Change ownership
             ulong grabbingClientId = rpcParams.Receive.SenderClientId;
             GetComponent<NetworkObject>().ChangeOwnership(grabbingClientId);
+            DropRPC();
         }
         // DROP
         
         public void Drop()
         {
+            Debug.Log($"[CottonLid]: I'm resetting handler localPosition. IsOwner? {IsOwner}");
             handler.transform.localPosition = Vector3.zero;
             handler.transform.localRotation = Quaternion.identity;
         }
 
-        [Rpc(SendTo.Owner)]
+        [Rpc(SendTo.Authority)]
         public void DropRPC()
         {
             Drop();
@@ -185,6 +187,7 @@ namespace Scripts
         // Colliders
         public void SetActiveCollidersStateSynced(bool state)
         {
+            Debug.Log($"[CottonLid]: I'm setting my colliders {state}.");
             if (!_isOnline)
             {
                 lidCollider.enabled = state;

@@ -107,13 +107,13 @@ namespace Scripts
 
         private void Drop(SelectExitEventArgs args)
         {
-            Debug.Log($"[LittlePetri]: I was dropped, I'm setting my physics state as true. IsOwner? {IsOwner}");
+            //Debug.Log($"[LittlePetri]: I was dropped, I'm setting my physics state as true. IsOwner? {IsOwner}");
             if (_isOnline && !IsOwner) return;
             
             // Change isGrabbed value
             if(!_isOnline)
             {
-                _isGrabbed.Value = false;;
+                _isGrabbed.Value = false;
             }
             else
             {
@@ -132,7 +132,7 @@ namespace Scripts
         
         public void SetPhysicsStateSynced(bool state)
         {
-            Debug.Log($"[LittlePetri]: I'm setting my physics state as {state}. IsOwner? {IsOwner}");
+            //Debug.Log($"[LittlePetri]: I'm setting my physics state as {state}. IsOwner? {IsOwner}");
             if (!_isOnline)
             {
                 rBody.isKinematic = !state;
@@ -261,7 +261,7 @@ namespace Scripts
         // Physics
         private void StopRigidBodySynced()
         {
-            Debug.Log($"[LittlePetri]: I'm gonna stop my rigidbody velocity. IsOwner? {IsOwner}");
+            //Debug.Log($"[LittlePetri]: I'm going to stop my rigidbody velocity. IsOwner? {IsOwner}");
             if (!_isOnline)
             {
                 rBody.linearVelocity = Vector3.zero;

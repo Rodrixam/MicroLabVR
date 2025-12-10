@@ -159,7 +159,7 @@ namespace Scripts
         // ON OBJECT PLACED
         private void OnObjectPlaced(SelectEnterEventArgs args)
         {
-            Debug.Log("[LidPetri]: I'm gonna attach something");
+            //Debug.Log("[LidPetri]: I'm gonna attach something");
             if (_petriIsAttached.Value)
             {
                 Debug.Log("[LidPetri]: Something fell in my socket, but I already had something attached");
@@ -207,7 +207,7 @@ namespace Scripts
         // ON OBJECT REMOVED
         private void OnObjectRemoved(SelectExitEventArgs args)
         {
-            Debug.Log($"[LidPetri]: An object was removed. petriIsAttached? {_petriIsAttached.Value}");
+            //Debug.Log($"[LidPetri]: An object was removed. petriIsAttached? {_petriIsAttached.Value}");
             // Change petriIsAttached value
             if (!_petriIsAttached.Value) return;
             SetPetriIsAttachedStateSynced(false);
@@ -323,7 +323,7 @@ namespace Scripts
         [Rpc(SendTo.NotMe)]
         private void DetachInOthersRPC()
         {
-            Debug.Log("[LidPetri]: I'm not the owner, but I'm detaching anyways");
+            //Debug.Log("[LidPetri]: I'm not the owner, but I'm detaching anyway");
             var interactable = socket.GetOldestInteractableSelected();
             if (interactable != null)
             {
